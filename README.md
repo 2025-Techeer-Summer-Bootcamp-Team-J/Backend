@@ -26,9 +26,21 @@
    ```
 
 5. Docker Container 접속:
+   ```bash
    docker-compose exec -it containerID or name bash
+   ```
+   - 패키지를 설치하려면
+     ```bash
+     docker-compose exec -it app
+     pip install requests
+     ```
+     와 같이 설치하고
+     ```bash
+     pip freeze > requirements.txt
+     ```
+     도 해주자
 
-5. 애플리케이션에 접속:
+6. 애플리케이션에 접속:
    브라우저에서 [http://localhost:8000]를 열어 프로젝트를 확인
     - http://localhost:8000/docs#/default 로 접속하면 반응형 페이지로 접속
 
