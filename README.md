@@ -1,131 +1,37 @@
-# Initial-settings
-초기 세팅과 관련된 레포지토리
+# backend
 
-## 가상환경 세팅
-가상환경 활성화가 되면 terminal에서 왼쪽에 (venv) or (디렉토리 이름) 이라고 표시됨
-가상환경 세팅은 명령어로 해도 되지만, 그냥 Project -> Settings에서 버튼 클릭해서 세팅해도 됨
+# 프로젝트명
 
-<details>
-<summary><strong>1. 가상환경 생성</strong></summary>
+## 요구사항
+- Docker desktop
+- Git
+- .env 루트 디렉토리에 생성 및 노션 참고 복붙
+   -  ( secretkey의 경우 settings.py 본인 키값 사용 )
 
+## 설치 및 실행
 
-![image](https://github.com/user-attachments/assets/6bf7d783-dce9-42c6-82c0-b5de8f7fde91)
+1. 깃헙 저장소에서 프로젝트 클론:
+   ```bash
+   git clone https://github.com/yourusername/your-repository.git
+   cd your-repository
+   ```
 
+2. `.env` 파일 복사 붙여넣기:
+    팀 노션의 secret file/backend 페이지 참고
+       .env 루트 디렉토리에 생성 및 노션 참고 복붙
 
-- 파이썬 가상환경 생성  
-  ```bash
-  python -m venv .venv
-  ```
+4. Docker Compose 실행:
+   ```bash
+   docker-compose up -d
+   ```
 
-- conda 가상환경 생성  
-  ```bash
-  conda create -n venv python=3.10
-  ```
+5. Docker Container 접속:
+   docker-compose exec -it containerID or name bash
 
-</details>
-
----
-
-<details>
-<summary><strong>2. 가상환경 활성화</strong></summary>
-
-- 파이썬 가상환경 활성화  
-  ```bash
-  source .venv/bin/activate
-  ```
-
-- conda 가상환경 활성화  
-  ```bash
-  conda activate venv
-  ```
-
-</details>
-
----
-
-<details>
-<summary><strong>3. 가상환경 비활성화</strong></summary>
-
-- 파이썬 가상환경 비활성화  
-  ```bash
-  deactivate
-  ```
-
-- conda 가상환경 비활성화  
-  ```bash
-  conda deactivate
-  ```
-
-<br>
-
-</details>
-
-## 패키지 설치
-requirements.txt 파일에 있는 패키지들을 설치하는 방법
-
-<details>
-<summary><strong>1. 패키지 설치</strong></summary>
-
-```bash
-  pip install -r requirements.txt
-```
-
-</details>
-
----
-
-## Docker로 DB 띄우기
-docker-compose.yml 파일을 통해 Docker로 DB를 띄우는 방법입니다. 
-이 예시에서는 MySQL을 사용합니다.
-
-파이참 유료버전을 쓸 경우 yml 파일을 열면 Docker로 DB를 띄우는 버튼이 있습니다.
-
-해당 버튼을 눌러 DB를 띄우고 파이참 우측 상단의 DB 탭에서 DB에 접속할 수 있습니다.
+5. 애플리케이션에 접속:
+   브라우저에서 [http://localhost:8000]를 열어 프로젝트를 확인
+    - http://localhost:8000/docs#/default 로 접속하면 반응형 페이지로 접속
 
 
-<details>
-<summary><strong>1. Docker로 DB 띄우기</strong></summary>
 
-- Docker로 DB 띄우기  
-  ```bash
-  docker compose up -d
-  ```
-- Docker로 DB 중지하기  
-  ```bash
-    docker compose down
-    ```
-</details>
-
-<br>
-
-## Django 프로젝트 생성
-<details>
-<summary><strong>1. Django 프로젝트 생성</strong></summary>
-
-- Django 프로젝트 생성  
-  ```bash
-  django-admin startproject config .
-  ```
-- Django 앱 생성  
-  ```bash
-    python manage.py startapp app_name
-    ```
-</details>
-
----
-
-<details>
-<summary><strong>2. Django 프로젝트 실행</strong></summary>
-
-- Django 프로젝트 마이그레이션  
-  ```bash
-  python manage.py migrate
-  ```
-
-- Django 프로젝트 실행  
-  ```bash
-  python manage.py runserver
-  ```
-  
-</details>
 
