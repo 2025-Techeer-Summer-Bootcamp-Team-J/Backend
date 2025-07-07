@@ -34,7 +34,7 @@
    
    - 패키지를 설치하려면
      ```bash
-     docker-compose exec -it Backend
+     docker-compose exec -it backend
      pip install requests
      ```
      와 같이 설치하고
