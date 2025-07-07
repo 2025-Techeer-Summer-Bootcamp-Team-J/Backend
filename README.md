@@ -20,6 +20,7 @@
     팀 노션의 secret file/backend 페이지 참고
        .env 루트 디렉토리에 생성 및 노션 참고 복붙
 
+
 3. Docker Compose 실행:
    ```bash
    docker-compose up -d
