@@ -21,6 +21,7 @@
        .env 루트 디렉토리에 생성 및 노션 참고 복붙
 
 4. Docker Compose 실행:
+
    ```bash
    docker-compose up -d
    ```
