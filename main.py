@@ -1,61 +1,21 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from database import SessionLocal, Post
+from fastapi import FastAPI
+import models.post as post
+from database.database import engine
+from api.router import api_router
 
+#서버가 실행되는 메인 공간
+
+# models에 있는 객체들을 자동으로 db에 생성
+post.Base.metadata.create_all(bind=engine)
+
+# 서버 실행
 app = FastAPI()
+# post/router/post_router.py에서 main으로 라우팅
+# tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
+app.include_router(api_router, tags=["posts"])
 
-class PostCreate(BaseModel):
-    title: str
-    content: str
+# root url get 메서드
+@app.get("/")
+def read_root():
+    return {"message": "Hello, World!"}
 
-class PostRead(PostCreate):
-    id: int
-    class Config:
-        orm_mode = True
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@app.post("/posts/", response_model=PostRead)
-def create_post(post: PostCreate, db: Session = Depends(get_db)):
-    db_post = Post(title=post.title, content=post.content)
-    db.add(db_post)
-    db.commit()
-    db.refresh(db_post)
-    return db_post
-
-@app.get("/posts/", response_model=list[PostRead])
-def read_posts(db: Session = Depends(get_db)):
-    return db.query(Post).all()
-
-@app.get("/posts/{post_id}", response_model=PostRead)
-def read_post(post_id: int, db: Session = Depends(get_db)):
-    post = db.query(Post).filter(Post.id == post_id).first()
-    if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    return post
-
-@app.put("/posts/{post_id}", response_model=PostRead)
-def update_post(post_id: int, post: PostCreate, db: Session = Depends(get_db)):
-    db_post = db.query(Post).filter(Post.id == post_id).first()
-    if not db_post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    db_post.title = post.title
-    db_post.content = post.content
-    db.commit()
-    db.refresh(db_post)
-    return db_post
-
-@app.delete("/posts/{post_id}")
-def delete_post(post_id: int, db: Session = Depends(get_db)):
-    db_post = db.query(Post).filter(Post.id == post_id).first()
-    if not db_post:
-        raise HTTPException(status_code=404, detail="Post not found")
-    db.delete(db_post)
-    db.commit()
-    return {"ok": True}
