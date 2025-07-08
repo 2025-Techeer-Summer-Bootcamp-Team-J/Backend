@@ -13,7 +13,7 @@ post.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 # post/router/post_router.py에서 main으로 라우팅
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
-app.include_router(api_router, tags=["posts"])
+app.include_router(api_router)
 
 # root url get 메서드
 @app.get("/")
