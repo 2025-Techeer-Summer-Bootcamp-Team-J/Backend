@@ -1,8 +1,9 @@
-
 from fastapi import FastAPI
 import models.post as post
 from database.database import engine
 from api.router import api_router
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 #서버가 실행되는 메인 공간
 
@@ -19,3 +20,6 @@ app.include_router(api_router, tags=["posts"])
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
+
+# Prometheus 메트릭을 위한 설정
+Instrumentator().instrument(app).expose(app)
