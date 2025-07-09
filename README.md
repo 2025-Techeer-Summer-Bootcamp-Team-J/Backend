@@ -45,7 +45,7 @@
      도 해주자
 
 6. 애플리케이션에 접속:
-   브라우저에서 [http://localhost:8000]를 열어 프로젝트를 확인
+   브라우저에서 [http://localvhost:8000]를 열어 프로젝트를 확인
     - http://localhost:8000/docs#/default 로 접속하면 반응형 페이지로 접속
 
 ## 로컬환경에서 fastAPI 서버를 실행하려면
