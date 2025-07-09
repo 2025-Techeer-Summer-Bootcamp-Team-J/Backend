@@ -17,3 +17,11 @@ class SkinTypeAllRead(BaseModel):
     tip_content: str
     class Config:
         orm_mode = True
+
+class SkinTypeUpdate(BaseModel):
+    type_name: str
+    tip_title: str
+    tip_content: str
+
+class SkinTypeDelete(BaseModel):
+    skin_type_id: int

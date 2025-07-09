@@ -33,9 +33,6 @@ RUN apt-get update && apt-get install -y \
     
 # Python 의존성 파일 복사
 
-WORKDIR /app
-# 작업 디렉토리 설정
-
 COPY requirements.txt .
 
 # Python 패키지 설치

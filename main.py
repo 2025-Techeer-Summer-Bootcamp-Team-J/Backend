@@ -1,5 +1,4 @@
 from fastapi import FastAPI, File, UploadFile
-import models.post as post
 from database.database import engine
 from api.router import api_router
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -14,7 +13,7 @@ import io
 #서버가 실행되는 메인 공간
 
 # models에 있는 객체들을 자동으로 db에 생성
-post.Base.metadata.create_all(bind=engine)
+#post.Base.metadata.create_all(bind=engine)
 
 # 서버 실행
 app = FastAPI()
@@ -22,7 +21,6 @@ app = FastAPI()
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
 app.include_router(api_router)
 
-# YOLOv8 모델 로드 (가중치 파일명은 weights.pt)
 yolo_model = YOLO("weights.pt")
 CLASS_NAMES = ["Melanoma", "Psoriasis", "Seborrheic Keratoses", "Warts-Molluscum"]
 
