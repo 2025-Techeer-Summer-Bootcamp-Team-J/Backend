@@ -51,6 +51,8 @@
 ## 로컬환경에서 fastAPI 서버를 실행하려면
 https://humble-orca-498.notion.site/uv-pip-228a2f53cce8801a94f4e90a79e37cb6?source=copy_link
 참고해서 uv 가상환경 설치 후 진행
+   database/database.py
+   위 파일에 있는 mysql 주소를 바꿔야 로컬 - Docker 환경 바꾸기가 가능하다. 주석 참고
 
 ## fastAPI 기초적인 부분
 https://humble-orca-498.notion.site/fastAPI-229a2f53cce8808aa4a1f73c1607b969?source=copy_link
