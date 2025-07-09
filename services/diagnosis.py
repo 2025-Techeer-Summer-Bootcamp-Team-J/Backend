@@ -1,4 +1,4 @@
-import sqlalchemy.orm import Session
+from sqlalchemy.orm import Session
 from models.diagnosis import Diagnosis
 
 
