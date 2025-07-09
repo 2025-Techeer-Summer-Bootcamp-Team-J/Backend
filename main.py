@@ -2,6 +2,8 @@ from fastapi import FastAPI, File, UploadFile
 import models.post as post
 from database.database import engine
 from api.router import api_router
+from prometheus_fastapi_instrumentator import Instrumentator
+
 
 # YOLOv8 skin disease detection 추가 import
 from fastapi.responses import JSONResponse
@@ -29,7 +31,10 @@ CLASS_NAMES = ["Melanoma", "Psoriasis", "Seborrheic Keratoses", "Warts-Molluscum
 def read_root():
     return {"message": "Hello, World!"}
 
-# 피부 질병 탐지 엔드포인트
+# Prometheus 메트릭을 위한 설정
+Instrumentator().instrument(app).expose(app)
+"""
+# 피부 질병 탐지 엔드포인트, 테스트용 코드
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     image_bytes = await file.read()
@@ -48,3 +53,4 @@ async def predict(file: UploadFile = File(...)):
             "confidence": confidence
         })
     return JSONResponse(content={"results": output})
+ """
