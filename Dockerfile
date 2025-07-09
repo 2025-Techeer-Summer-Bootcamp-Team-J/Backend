@@ -38,7 +38,6 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-
 # Python 패키지 설치
 RUN uv pip install --system -r requirements.txt
 RUN uv pip install --system gunicorn
