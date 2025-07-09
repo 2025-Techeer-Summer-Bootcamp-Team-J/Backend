@@ -23,7 +23,7 @@ app = FastAPI()
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
 app.include_router(api_router)
 # AI 모델 로드
-app.state.model = YOLO("weights2.pt")
+app.state.model = YOLO("weights.pt")
 
 # diagnosis 라우터 등록
 app.include_router(diagnosis_router)
