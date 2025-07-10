@@ -36,3 +36,9 @@ def update_skintype(db: Session, skintype_id: int, skintype_update: SkinTypeUpda
     skintype.tip_content = skintype.tip_content
     db.commit()
     return skintype
+
+def get_type_description_by_id(db: Session, skintype_id: int):
+    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id).first()
+    if not skintype:
+        raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
+    return skintype.type_description
