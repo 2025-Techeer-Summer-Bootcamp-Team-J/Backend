@@ -35,8 +35,3 @@ class Diagnosis(Base):
     diseases = relationship("Disease", secondary=diagnosis_disease_association, back_populates="diagnoses")
 
 
-
-
-
-
-
