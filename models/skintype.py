@@ -7,6 +7,7 @@ class SkinType(Base):
 
     skin_type_id = Column(Integer, primary_key=True, index=True)
     type_name = Column(VARCHAR(255), nullable=False)
+    type_description = Column(Text, nullable=False)
     tip_title = Column(VARCHAR(255), nullable=False)
     tip_content = Column(Text, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
