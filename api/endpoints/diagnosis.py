@@ -6,10 +6,7 @@ from PIL import Image  # ← Image import 추가
 from schema.diagnosis import DiagnosisResponse
 import io  # ← io import 추가
 
-router = APIRouter(
-    prefix="/diagnoses",
-    tags=["diagnoses"]
-)
+router = APIRouter(prefix="/diagnoses", tags=["diagnoses"])
 
 # <<< 명세에 맞게 수정된 부분 (POST /diagnoses) >>>
 @router.post("", response_model=DiagnosisResponse, summary="진단 요청")
@@ -59,9 +56,13 @@ async def create_diagnosis(
         for d in saved_diagnoses
     ]}
 
-@router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="특정 사용자의 모든 진단 목록 조회")
+@router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="유저 진단 조회", description="유저 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+    if not user_id:
+        return ResultResponseModel(status_code=500, message="없는 사용자 입니다")
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
+    if not diagnoses:
+        return ResultResponseModel(status_code=500, message="진단 데이터가 없습니다")
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
     "data": [
         {
@@ -73,3 +74,7 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
         }
         for d in diagnoses
     ]}
+
+
+
+
