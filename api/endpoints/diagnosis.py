@@ -13,7 +13,6 @@ router = APIRouter(
     tags=["diagnoses"]
 )
 
-
 # <<< 명세에 맞게 수정된 부분 (POST /diagnoses) >>>
 @router.post("", response_model=DiagnosisResponse, summary="진단 요청")
 async def create_diagnosis(
@@ -45,11 +44,25 @@ async def create_diagnosis(
         data=[box_to_schema(d) for d in saved_diagnoses]
     )
 
-@router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="특정 사용자의 모든 진단 목록 조회")
+@router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="유저 진단 조회", description="유저 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+    if not user_id:
+        return ResultResponseModel(status_code=500, message="없는 사용자 입니다")
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
-    return DiagnosisResponse(
-        code=200,
-        message="특정 사용자의 모든 진단 조회 성공",
-        data=[box_to_schema(d) for d in diagnoses]
-    )
+    if not diagnoses:
+        return ResultResponseModel(status_code=500, message="진단 데이터가 없습니다")
+    return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
+    "data": [
+        {
+            "id": d.id,
+            "user_id": d.user_id,
+            "class_name": d.class_name,
+            "confidence": d.confidence,
+            "bounding_box": [d.x1, d.y1, d.x2, d.y2]
+        }
+        for d in diagnoses
+    ]}
+
+
+
+
