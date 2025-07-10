@@ -3,13 +3,16 @@ from sqlalchemy.orm import Session
 from models.diagnosis import Diagnosis
 from database.database import get_db
 from PIL import Image  # ← Image import 추가
-from schema.diagnosis import DiagnosisResponse
+from schema.diagnosis import DiagnosisResponse, box_to_schema, boxes_to_diagnosis_objs
 import io  # ← io import 추가
+from typing import List
+from pydantic import BaseModel
 
 router = APIRouter(
     prefix="/diagnoses",
     tags=["diagnoses"]
 )
+
 
 # <<< 명세에 맞게 수정된 부분 (POST /diagnoses) >>>
 @router.post("", response_model=DiagnosisResponse, summary="진단 요청")
@@ -29,47 +32,24 @@ async def create_diagnosis(
     results = model.predict(pil_image)
     
     result = results[0]
+    diagnosis_objs = boxes_to_diagnosis_objs(result, user_id)
     saved_diagnoses = []
-    
-    if result.boxes is not None:
-        for box in result.boxes:
-            db_diagnosis = Diagnosis(
-                user_id=user_id,
-                class_name=result.names[int(box.cls)],
-                confidence=float(box.conf),
-                x1=int(box.xyxy[0][0]),
-                y1=int(box.xyxy[0][1]),
-                x2=int(box.xyxy[0][2]),
-                y2=int(box.xyxy[0][3]),
-            )
-            db.add(db_diagnosis)
-            db.commit()
-            db.refresh(db_diagnosis)
-            saved_diagnoses.append(db_diagnosis)
-    
-    return {"code": 200, "message": "진단정보 생성 성공", 
-    "data": [
-        {
-            "id": d.id,
-            "user_id": d.user_id,
-            "class_name": d.class_name,
-            "confidence": d.confidence,
-            "bounding_box": [d.x1, d.y1, d.x2, d.y2]
-        }
-        for d in saved_diagnoses
-    ]}
+    for db_diagnosis in diagnosis_objs:
+        db.add(db_diagnosis)
+        db.commit()
+        db.refresh(db_diagnosis)
+        saved_diagnoses.append(db_diagnosis)
+    return DiagnosisResponse(
+        code=200,
+        message="진단정보 생성 성공",
+        data=[box_to_schema(d) for d in saved_diagnoses]
+    )
 
 @router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="특정 사용자의 모든 진단 목록 조회")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
-    return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
-    "data": [
-        {
-            "id": d.id,
-            "user_id": d.user_id,
-            "class_name": d.class_name,
-            "confidence": d.confidence,
-            "bounding_box": [d.x1, d.y1, d.x2, d.y2]
-        }
-        for d in diagnoses
-    ]}
+    return DiagnosisResponse(
+        code=200,
+        message="특정 사용자의 모든 진단 조회 성공",
+        data=[box_to_schema(d) for d in diagnoses]
+    )
