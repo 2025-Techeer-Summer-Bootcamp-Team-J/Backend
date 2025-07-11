@@ -1,10 +1,10 @@
 from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
-import models.post as post
 from database.database import engine
 from api.router import api_router
 from api.endpoints.diagnosis import router as diagnosis_router
 from prometheus_fastapi_instrumentator import Instrumentator
-
+import os
+import logging
 #서버가 실행되는 메인 공간
 
 # YOLOv8 skin disease detection 추가 import
@@ -13,6 +13,33 @@ from PIL import Image
 from ultralytics import YOLO
 import io
 
+# 로깅 설정 /app/logs/app.log 파일에 로깅
+
+# 해당 경로가 없으면 자동으로 생성
+os.makedirs("/app/logs", exist_ok=True)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+    handlers=[
+        logging.FileHandler("/app/logs/app.log"),
+        logging.StreamHandler()
+    ]
+)
+
+# Uvicorn access/error 로그도 파일로 남기기
+uvicorn_access_logger = logging.getLogger("uvicorn.access")
+uvicorn_error_logger = logging.getLogger("uvicorn.error")
+
+file_handler = logging.FileHandler("/app/logs/app.log")
+file_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+
+uvicorn_access_logger.addHandler(file_handler)
+uvicorn_error_logger.addHandler(file_handler)
+
+# 필요하다면 중복 방지
+uvicorn_access_logger.propagate = False
+uvicorn_error_logger.propagate = False
 
 # models에 있는 객체들을 자동으로 db에 생성
 #post.Base.metadata.create_all(bind=engine)
@@ -35,3 +62,5 @@ def read_root():
 
 # Prometheus 메트릭을 위한 설정
 Instrumentator().instrument(app).expose(app)
+
+logging.info("FastAPI 서버가 시작됩니다!")
