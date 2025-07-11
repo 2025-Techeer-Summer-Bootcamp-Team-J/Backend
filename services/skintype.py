@@ -41,8 +41,8 @@ def delete_skintype(db: Session, skin_type_id: int):
     db.commit()
     return skintype_data
 
-def update_skintype(db: Session, skintype_id: int, skintype_update: SkinTypeUpdate):
-    db_skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id).first()
+def update_skintype(db: Session, skin_type_id: int, skintype_update: SkinTypeUpdate):
+    db_skintype = db.query(SkinType).filter(SkinType.skin_type_id == skin_type_id).first()
     if not db_skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
     
