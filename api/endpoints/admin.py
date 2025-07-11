@@ -45,7 +45,7 @@ def create_skintype(skin_type: SkinTypeCreate, db: Session = Depends(get_db)):
         return ResultResponseModel(status_code=400, message="피부유형 정보가 없습니다")
     return create_skintype_service(db, skin_type)
 
-@router.put("/skintype/{skintype_id}", summary="피부유형정보 수정", description="피부유형정보를 수정합니다")
+@router.put("/skintype/{skin_type_id}", summary="피부유형정보 수정", description="피부유형정보를 수정합니다")
 def update_skintype(skin_type_id: int, skintype: SkinTypeUpdate, db: Session = Depends(get_db)):
     if not skin_type_id:
         return ResultResponseModel(status_code=400, message="피부유형 정보가 없습니다")
