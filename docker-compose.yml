@@ -79,6 +79,22 @@ services:
       - "9090:9090"
     networks:
       - backend-network
+  
+# cadvisor
+  cadvisor:
+    image: bitnami/cadvisor:latest
+    container_name: cadvisor
+    ports:
+      - "8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    restart: always
+    networks:
+      - backend-network
 
 # 그라파나 메트릭 시각화
   grafana:
