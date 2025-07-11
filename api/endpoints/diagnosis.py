@@ -54,7 +54,7 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
     "data": [
         {
-            "diagnosis_id": d.diagnosis_id,
+            "id": d.diagnosis_id,
             "user_id": d.user_id,
             "class_name": d.class_name,
             "confidence": d.confidence,
