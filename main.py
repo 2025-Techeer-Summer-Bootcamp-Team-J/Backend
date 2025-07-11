@@ -1,8 +1,5 @@
-from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
-import models.post as post
-from database.database import engine
+from fastapi import FastAPI
 from api.router import api_router
-from api.endpoints.diagnosis import router as diagnosis_router
 from prometheus_fastapi_instrumentator import Instrumentator
 
 #서버가 실행되는 메인 공간
@@ -13,9 +10,12 @@ from PIL import Image
 from ultralytics import YOLO
 import io
 
+# 모든 모델들을 import하여 순환참조 문제 해결
+from models import *  # 이렇게 하면 models/__init__.py에서 정의한 순서대로 모든 모델이 로드됩니다
+from database.database import engine, Base
 
 # models에 있는 객체들을 자동으로 db에 생성
-#post.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # 서버 실행
 app = FastAPI()
@@ -26,8 +26,6 @@ app.include_router(api_router)
 # AI 모델 로드
 app.state.model = YOLO("weights.pt")
 
-# diagnosis 라우터 등록
-app.include_router(diagnosis_router)
 # root url get 메서드
 @app.get("/")
 def read_root():
