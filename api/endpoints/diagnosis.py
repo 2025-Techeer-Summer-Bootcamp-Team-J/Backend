@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from models.diagnosis import Diagnosis
 from database.database import get_db
 from PIL import Image  # ← Image import 추가
-from schema.diagnosis import DiagnosisResponse, box_to_schema, boxes_to_diagnosis_objs
+from schema.diagnosis import DiagnosisResponse, box_to_schema, boxes_to_diagnosis_objs, BoundingBox
 import io  # ← io import 추가
 from typing import List
 from pydantic import BaseModel
@@ -54,11 +54,11 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
     "data": [
         {
-            "id": d.id,
+            "id": d.diagnosis_id,
             "user_id": d.user_id,
             "class_name": d.class_name,
             "confidence": d.confidence,
-            "bounding_box": [d.x1, d.y1, d.x2, d.y2]
+            "bounding_box": BoundingBox(x1=d.x1, y1=d.y1, x2=d.x2, y2=d.y2)
         }
         for d in diagnoses
     ]}
