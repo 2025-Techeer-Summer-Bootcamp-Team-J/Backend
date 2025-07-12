@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from services.diseases import get_all_diseases
+from services.diseases import get_all_diseases_name
 
 from schema.ResultResponseModel import ResultResponseModel
 from sqlalchemy.orm import Session
@@ -9,8 +9,8 @@ from database.database import get_db
 router = APIRouter(prefix="/diseases", tags=["Diseases"])
 
 @router.get("", summary="전체 질환 목록 조회", description="전체 질환 목록 조회합니다.")
-def get_all_diseases_endpoint(db: Session = Depends(get_db)):
-    diseases = get_all_diseases(db)
+def get_all_diseases_name_endpoint(db: Session = Depends(get_db)):
+    diseases = get_all_diseases_name(db)
     if not diseases:
         return ResultResponseModel(
         status_code=400,
