@@ -1,9 +1,48 @@
 services:
+  # Nginx 리버스 프록시 (브로틀리 지원)
+  nginx:
+    image: nginx:alpine
+    # 브로틀리 모듈이 포함된 이미지 사용
+    # image: nginx:alpine-brotli
+    container_name: nginx-proxy
+    ports:
+      - "${NGINX_PORT:-80}:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx
+      - ./ssl:/etc/nginx/ssl
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    networks:
+      - backend-network
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Certbot for SSL certificates
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    command: certonly --webroot --webroot-path=/var/www/certbot --email your-email@example.com --agree-tos --no-eff-email -d your-domain.com
+    depends_on:
+      - nginx
+
   backend:
     build: .
     container_name: fastapi
-    ports:
-      - "${BACKEND_PORT}:8000"
+    expose:
+      - "8000"
     volumes:
       - .:/app
       - /app/__pycache__
@@ -95,6 +134,9 @@ services:
     restart: always
     networks:
       - backend-network
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
   
 
 # 그라파나 메트릭 시각화
