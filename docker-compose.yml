@@ -41,8 +41,10 @@ services:
   backend:
     build: .
     container_name: fastapi
-    expose:
-      - "8000"
+    ports:
+      - "${BACKEND_PORT}:8000"
+    # expose:
+    #   - "8000"
     volumes:
       - .:/app
       - /app/__pycache__
