@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-
 from models.diseases import Disease
 from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseDelete, DiseaseRead
 

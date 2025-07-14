@@ -58,6 +58,7 @@ app.include_router(api_router)
 # AI 모델 로드
 #app.state.model = YOLO("weights.pt")
 
+
 # root url get 메서드
 @app.get("/")
 def read_root():

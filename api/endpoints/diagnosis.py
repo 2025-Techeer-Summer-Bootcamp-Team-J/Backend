@@ -55,11 +55,20 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
 
     if not diagnoses:
         raise HTTPException(status_code=500, detail="진단 데이터가 없습니다")
-    return DiagnosisResponse(
-        code=200,
-        message="특정 사용자의 모든 진단 조회 성공",
-        data=[box_to_schema(d) for d in diagnoses]
-    )
+
+    return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
+    "data": [
+        {
+            "id": d.diagnosis_id,
+            "user_id": d.user_id,
+            "class_name": d.class_name,
+            "confidence": d.confidence,
+            "bounding_box": BoundingBox(
+                x1=int(d.x1), y1=int(d.y1), x2=int(d.x2), y2=int(d.y2)
+            )
+        }
+        for d in diagnoses
+    ]}
 
 @router.delete("/{diagnosis_id}", summary="진단 삭제", description="진단 정보를 삭제합니다")
 def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends(get_db)):

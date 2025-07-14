@@ -11,19 +11,17 @@ router = APIRouter(prefix="/diseases", tags=["Diseases"])
 # 전체 질환 목록 조회
 @router.get("", summary="전체 질환 목록 조회", description="전체 질환 목록 조회합니다.")
 def get_all_diseases_name_endpoint(db: Session = Depends(get_db)):
-    diseases = get_all_diseases_name(db)
-    if not diseases:
+    try:
+        diseases = get_all_diseases_name(db)  
         return ResultResponseModel(
-        status_code=400,
-        message="전체 질환 목록 조회 실패",
-        data=None
-    )   
-    return ResultResponseModel(
-        status_code=200,
-        message="전체 질환 목록 조회 성공",
-        data=diseases
-    )
-
+            status_code=200,
+            message="전체 질환 목록 조회 성공",
+            data=diseases
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail="전체 질환 목록 조회 실패")
 
 # 특정 질환 상세 조회
 @router.get("/{disease_id}", summary="질환 상세 조회", description="질환 상세 조회합니다.")
@@ -38,7 +36,8 @@ def get_disease_by_id_endpoint(disease_id: int, db: Session = Depends(get_db)):
     except HTTPException as e:
         raise HTTPException(
             status_code=400,
-            detail="찾을 수 없는 질질환id 입니다.")
+            detail="찾을 수 없는 질환id 입니다.")
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
