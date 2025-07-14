@@ -16,6 +16,9 @@ from schema.skintype import SkinTypeCreate, SkinTypeUpdate, SkinTypeDelete, Skin
 
 load_dotenv()
 api_key = os.environ.get("AILAB_API_KEY")
+if not api_key:
+    # Fail fast on startup if the key is missing.
+    raise ValueError("AILAB_API_KEY environment variable is not set.")
 
 def create_session_with_retry():
     """재시도 로직이 포함된 requests 세션을 생성합니다."""
@@ -36,20 +39,11 @@ def create_session_with_retry():
 
 def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
     """AILabAPI를 사용하여 피부 유형을 분석합니다."""
-    if not api_key:
-        raise HTTPException(status_code=500, detail="AILAB_API_KEY가 설정되지 않았습니다")
-    
     url = "https://www.ailabapi.com/api/portrait/analysis/skin-analysis"
     
     try:
-        if image_file.content_type not in ["image/jpeg", "image/jpg"]:
-            raise HTTPException(status_code=400, detail="JPG 또는 JPEG 형식의 이미지만 지원됩니다")
-        
         image_data = image_file.file.read()
         image_file.file.seek(0)
-        
-        if len(image_data) > 2 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="파일 크기는 2MB를 초과할 수 없습니다")
         
         files = {
             'image': (image_file.filename or 'image.jpg', io.BytesIO(image_data), image_file.content_type)
@@ -58,13 +52,13 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
             'ailabapi-api-key': api_key
         }
         
-        session = create_session_with_retry()
-        response = session.post(url, headers=headers, files=files, timeout=(10, 60))
-        
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail="AILab API 호출 실패")
-        
-        return response.json()
+        with create_session_with_retry() as session:
+            response = session.post(url, headers=headers, files=files, timeout=(10, 60))
+            
+            if response.status_code != 200:
+                raise HTTPException(status_code=response.status_code, detail="AILab API 호출 실패")
+            
+            return response.json()
         
     except requests.exceptions.Timeout:
         raise HTTPException(status_code=504, detail="API 호출 시간이 초과되었습니다")
@@ -74,9 +68,6 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"API 호출 중 오류가 발생했습니다: {str(e)}")
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="API 응답을 파싱할 수 없습니다")
-    finally:
-        if 'session' in locals():
-            session.close()
 
 def get_skintype_analysis(db: Session, user_id: int, image: UploadFile) -> Dict[str, Any]:
     """이미지를 분석하여 피부 유형 정보를 반환하고 사용자별로 결과를 저장합니다."""
@@ -90,13 +81,7 @@ def get_skintype_analysis(db: Session, user_id: int, image: UploadFile) -> Dict[
     analysis_result = analyze_skin_with_ailab(image)
     
     # skin_type 값 추출 (result.skin_type.skin_type 경로)
-    skin_type_code = None
-    if 'result' in analysis_result and isinstance(analysis_result['result'], dict):
-        result_data = analysis_result['result']
-        if 'skin_type' in result_data and isinstance(result_data['skin_type'], dict):
-            skin_type_obj = result_data['skin_type']
-            if 'skin_type' in skin_type_obj:
-                skin_type_code = skin_type_obj['skin_type']
+    skin_type_code = analysis_result.get('result', {}).get('skin_type', {}).get('skin_type')
     
     if skin_type_code is None:
         raise HTTPException(status_code=500, detail="피부 유형 분석 결과를 얻을 수 없습니다")

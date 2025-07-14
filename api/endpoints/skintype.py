@@ -39,7 +39,5 @@ async def create_skintype_analysis(
     try:
         response_data = get_skintype_analysis(db=db, user_id=user_id, image=image)
         return ResultResponseModel(status_code=200, message="피부 유형 분석이 완료되었습니다", data=response_data)
-    except HTTPException as e:
-        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail={"code": 500, "detail": f"분석 중 오류가 발생했습니다: {str(e)}"})
