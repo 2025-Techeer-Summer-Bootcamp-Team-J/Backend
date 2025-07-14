@@ -24,11 +24,13 @@ async def create_diagnosis(
     # 파일이 이미지인지 간단히 확인
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail={"code": 400, "detail": "지원하지 않는 파일 형식입니다"})
-
-    contents = await file.read()
-    pil_image = Image.open(io.BytesIO(contents))
-    model = request.app.state.model  # ← main.py에서 등록한 모델 사용
-    results = model.predict(pil_image)
+    try:
+        contents = await file.read()
+        pil_image = Image.open(io.BytesIO(contents))
+        model = request.app.state.model  # ← main.py에서 등록한 모델 사용
+        results = model.predict(pil_image)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"ai 모델 오류: {str(e)}")
     
     result = results[0]
     diagnosis_objs = boxes_to_diagnosis_objs(result, user_id)
@@ -54,10 +56,10 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     else:
         print("diagnoses가 비어있음")
     if not user_id:
-        raise HTTPException(status_code=500, detail="없는 사용자 입니다")
+        raise HTTPException(status_code=404, detail="없는 사용자 입니다")
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
     if not diagnoses:
-        raise HTTPException(status_code=500, detail="진단 데이터가 없습니다")
+        raise HTTPException(status_code=404, detail="진단 데이터가 없습니다")
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
     "data": [
         {

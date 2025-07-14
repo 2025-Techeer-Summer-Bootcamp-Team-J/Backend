@@ -31,7 +31,7 @@ class Diagnosis(Base):
     
     # 기존 컬럼들
     expected_treat = Column(Integer, nullable=True)
-    severity = Column(Float, nullable=True)
+    skinType_score = Column(Float, nullable=True)
     image = Column(VARCHAR(255), nullable=True)
     image_quality = Column(Integer, nullable=True)
     after = Column(VARCHAR(255), nullable=True)
@@ -49,5 +49,3 @@ class Diagnosis(Base):
     @property
     def id(self):
         return self.diagnosis_id
-
-
