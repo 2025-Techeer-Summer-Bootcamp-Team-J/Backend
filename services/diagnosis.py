@@ -14,10 +14,9 @@ def delete_diagnosis(db: Session, user_id: int, diagnosis_id: int):
     if not diagnosis:
         raise HTTPException(status_code=404, detail="진단 정보가 없습니다")
 
-    #관계 필드의 연결을 끊음
     diagnosis.diseases.clear()
     diagnosis.symptoms.clear()
-    diagnosis.skin_type.diagnoses.clear()
+    diagnosis.skin_type = None
 
     db.delete(diagnosis)
     db.commit()
