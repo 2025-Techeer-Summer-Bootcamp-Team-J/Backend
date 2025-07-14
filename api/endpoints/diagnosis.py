@@ -65,7 +65,9 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
             "user_id": d.user_id,
             "class_name": d.class_name,
             "confidence": d.confidence,
-            "bounding_box": BoundingBox(x1=d.x1, y1=d.y1, x2=d.x2, y2=d.y2)
+            "bounding_box": BoundingBox(
+                x1=int(d.x1), y1=int(d.y1), x2=int(d.x2), y2=int(d.y2)
+            )
         }
         for d in diagnoses
     ]}
