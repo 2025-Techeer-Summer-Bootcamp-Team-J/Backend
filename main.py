@@ -10,7 +10,7 @@ import logging
 # YOLOv8 skin disease detection 추가 import
 from fastapi.responses import JSONResponse
 from PIL import Image
-from ultralytics import YOLO
+#from ultralytics import YOLO
 import io
 
 # 로깅 설정 /app/logs/app.log 파일에 로깅
@@ -56,7 +56,7 @@ app = FastAPI()
 app.include_router(api_router)
 
 # AI 모델 로드
-app.state.model = YOLO("weights.pt")
+# app.state.model = YOLO("weights.pt")
 
 # root url get 메서드
 @app.get("/")
