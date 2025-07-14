@@ -41,10 +41,8 @@ services:
   backend:
     build: .
     container_name: fastapi
-    ports:
-      - "${BACKEND_PORT}:8000"
-    # expose:
-    #   - "8000"
+    expose:
+      - "8000"
     volumes:
       - .:/app
       - /app/__pycache__
@@ -136,10 +134,6 @@ services:
     restart: always
     networks:
       - backend-network
-    privileged: true
-    security_opt:
-      - seccomp:unconfined
-  
 
 # 그라파나 메트릭 시각화
   grafana:
