@@ -17,11 +17,6 @@ def get_skintype_by_id(skintype_id: int, db: Session = Depends(get_db)):
     response_data = get_type_description_by_id(db=db, skintype_id=skintype_id)
     return ResultResponseModel(status_code=200, message="success", data=response_data)
 
-@router.get("/{user_id}/history", summary="사용자 피부 분석 히스토리", description="사용자의 피부 분석 기록을 조회합니다")
-def get_user_skintype_history(user_id: int, db: Session = Depends(get_db)):
-    from services.skintype import get_user_analysis_history
-    response_data = get_user_analysis_history(db=db, user_id=user_id)
-    return ResultResponseModel(status_code=200, message="success", data=response_data)
 
 @router.post("/{user_id}/analysis", summary="피부 유형 분석", description="얼굴 사진을 업로드하여 피부 유형을 분석합니다")
 async def create_skintype_analysis(
