@@ -46,6 +46,13 @@ async def create_diagnosis(
 
 @router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="유저 진단 조회", description="유저 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+    diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
+    print("diagnoses 타입:", type(diagnoses))
+    if diagnoses:
+        print("첫 번째 진단 객체 타입:", type(diagnoses[0]))
+        print("첫 번째 진단 x1 값과 타입:", diagnoses[0].x1, type(diagnoses[0].x1))
+    else:
+        print("diagnoses가 비어있음")
     if not user_id:
         raise HTTPException(status_code=500, detail="없는 사용자 입니다")
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
