@@ -56,7 +56,8 @@ app = FastAPI()
 app.include_router(api_router)
 
 # AI 모델 로드
-# app.state.model = YOLO("weights.pt")
+#app.state.model = YOLO("weights.pt")
+
 
 # root url get 메서드
 @app.get("/")
