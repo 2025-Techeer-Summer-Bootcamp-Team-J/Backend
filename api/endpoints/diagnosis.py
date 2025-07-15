@@ -3,10 +3,16 @@ from sqlalchemy.orm import Session
 from models.diagnosis import Diagnosis
 from database.database import get_db
 from PIL import Image  # ← Image import 추가
-from schema.diagnosis import DiagnosisResponse, box_to_schema, boxes_to_diagnosis_objs, BoundingBox
+from schema.diagnosis import DiagnosisResponse, box_to_schema, BoundingBox, prediction_to_diagnosis_obj
 import io  # ← io import 추가
 from typing import List
 from pydantic import BaseModel
+from inference_sdk import InferenceHTTPClient
+import tempfile
+import shutil
+import os
+
+
 
 router = APIRouter(
     prefix="/diagnoses",
@@ -25,19 +31,52 @@ async def create_diagnosis(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail={"code": 400, "detail": "지원하지 않는 파일 형식입니다"})
 
-    contents = await file.read()
-    pil_image = Image.open(io.BytesIO(contents))
-    model = request.app.state.model  # ← main.py에서 등록한 모델 사용
-    results = model.predict(pil_image)
-    
-    result = results[0]
-    diagnosis_objs = boxes_to_diagnosis_objs(result, user_id)
+    # 업로드 파일을 임시 파일로 저장
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+        shutil.copyfileobj(file.file, tmp)
+        tmp_path = tmp.name
+
+    # Roboflow inference API 호출
+    client = InferenceHTTPClient(
+        api_url="https://serverless.roboflow.com",
+        api_key=os.environ.get("ROBOFLOW_API_KEY")
+    )
+    result = client.run_workflow(
+        workspace_name="skin-classification-tm1gk",
+        workflow_id="detect-and-classify",
+        images={"image": tmp_path},
+        use_cache=True
+    )
+
+    # 임시 파일 삭제
+    os.remove(tmp_path)
+
+    # Roboflow 결과 파싱
+    predictions = []
+    # result가 리스트라면 첫 번째 요소를 사용
+    if isinstance(result, list) and len(result) > 0:
+        result = result[0]
+    if isinstance(result, dict):
+        output = result.get('output', {})
+        predictions_dict = output.get('predictions', {})
+        predictions = predictions_dict.get('predictions', [])
+
+    # DB 저장 및 응답 생성
     saved_diagnoses = []
-    for db_diagnosis in diagnosis_objs:
-        db.add(db_diagnosis)
-        db.commit()
-        db.refresh(db_diagnosis)
-        saved_diagnoses.append(db_diagnosis)
+    print("Roboflow result:", result)
+    print("파싱된 predictions:", predictions)
+    for pred in predictions:
+        try:
+            print("예측 결과 pred:", pred)
+            db_diagnosis = prediction_to_diagnosis_obj(pred, user_id)
+            db.add(db_diagnosis)
+            db.commit()
+            db.refresh(db_diagnosis)
+            saved_diagnoses.append(db_diagnosis)
+        except Exception as e:
+            print("DB 저장 중 오류:", e)
+    print("최종 saved_diagnoses:", saved_diagnoses)
+
     return DiagnosisResponse(
         code=200,
         message="진단정보 생성 성공",
@@ -59,18 +98,8 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     if not diagnoses:
         raise HTTPException(status_code=500, detail="진단 데이터가 없습니다")
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
-    "data": [
-        {
-            "id": d.diagnosis_id,
-            "user_id": d.user_id,
-            "class_name": d.class_name,
-            "confidence": d.confidence,
-            "bounding_box": BoundingBox(
-                x1=int(d.x1), y1=int(d.y1), x2=int(d.x2), y2=int(d.y2)
-            )
-        }
-        for d in diagnoses
-    ]}
+    "data": [box_to_schema(d) for d in diagnoses]
+    }
 
 
 
