@@ -51,7 +51,6 @@ def update_disease(db: Session, disease_id: int, disease_update: DiseaseUpdate):
     db.refresh(db_disease)
     return DiseaseRead.model_validate(db_disease)
 
-
 def get_disease_by_id(db: Session, disease_id: int):
     disease = db.query(Disease).filter(Disease.disease_id == disease_id).first()
     if not disease:

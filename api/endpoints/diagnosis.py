@@ -11,7 +11,7 @@ from inference_sdk import InferenceHTTPClient
 import tempfile
 import shutil
 import os
-
+from services.diagnosis import delete_diagnosis
 
 
 router = APIRouter(
@@ -85,22 +85,28 @@ async def create_diagnosis(
 
 @router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="유저 진단 조회", description="유저 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
-    diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
-    print("diagnoses 타입:", type(diagnoses))
-    if diagnoses:
-        print("첫 번째 진단 객체 타입:", type(diagnoses[0]))
-        print("첫 번째 진단 x1 값과 타입:", diagnoses[0].x1, type(diagnoses[0].x1))
-    else:
-        print("diagnoses가 비어있음")
+
     if not user_id:
         raise HTTPException(status_code=500, detail="없는 사용자 입니다")
+
     diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
+
     if not diagnoses:
         raise HTTPException(status_code=500, detail="진단 데이터가 없습니다")
+
     return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
     "data": [box_to_schema(d) for d in diagnoses]
     }
 
+@router.delete("/{diagnosis_id}", summary="진단 삭제", description="진단 정보를 삭제합니다")
+def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends(get_db)):
 
+    deleted_diagnosis = delete_diagnosis(db, user_id, diagnosis_id)
 
+    deleted_data_schema = box_to_schema(deleted_diagnosis)
 
+    return DiagnosisResponse(
+        code=200, 
+        message="진단 정보 삭제 성공", 
+        data=[deleted_data_schema]
+    )
