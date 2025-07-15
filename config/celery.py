@@ -22,7 +22,7 @@ app.autodiscover_tasks()
 try:
     from tasks import diagnosis, skintype
 except ImportError as e:
-    logger.error(f"태스크 모듈 임포트 실패: {str(e)}")
+    logging.getLogger(__name__).error(f"태스크 모듈 임포트 실패: {str(e)}")
 
 
 # 큐 설정
