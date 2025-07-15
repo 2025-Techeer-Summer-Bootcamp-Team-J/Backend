@@ -10,9 +10,7 @@ import logging
 
 # YOLOv8 skin disease detection 추가 import
 from fastapi.responses import JSONResponse
-from PIL import Image
-from ultralytics import YOLO
-import io
+
 
 # 로깅 설정 /app/logs/app.log 파일에 로깅
 
