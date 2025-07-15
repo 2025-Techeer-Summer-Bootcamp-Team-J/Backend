@@ -47,6 +47,27 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
             y2=getattr(diagnosis_obj, 'y2', 0),
         )
     )
+    
+def prediction_to_diagnosis_obj(pred, user_id):
+    from models.diagnosis import Diagnosis
+    # 중심점 좌표와 크기 → 좌상단/우하단 변환
+    x = int(pred.get('x', 0))
+    y = int(pred.get('y', 0))
+    width = int(pred.get('width', 0))
+    height = int(pred.get('height', 0))
+    x1 = x - width // 2
+    y1 = y - height // 2
+    x2 = x + width // 2
+    y2 = y + height // 2
+    return Diagnosis(
+        user_id=user_id,
+        class_name=pred.get('class', ''),
+        confidence=pred.get('confidence', 0.0),
+        x1=x1,
+        y1=y1,
+        x2=x2,
+        y2=y2,
+    )
 
 def boxes_to_diagnosis_objs(result, user_id: int) -> list:
     from models.diagnosis import Diagnosis as DiagnosisModel

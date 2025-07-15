@@ -1,6 +1,5 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-
 from models.diseases import Disease
 from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseDelete, DiseaseRead
 
@@ -51,3 +50,9 @@ def update_disease(db: Session, disease_id: int, disease_update: DiseaseUpdate):
     db.commit()
     db.refresh(db_disease)
     return DiseaseRead.model_validate(db_disease)
+
+def get_disease_by_id(db: Session, disease_id: int):
+    disease = db.query(Disease).filter(Disease.disease_id == disease_id).first()
+    if not disease:
+        raise HTTPException(status_code=404, detail="질병 정보가 없습니다")
+    return DiseaseRead.model_validate(disease)   
