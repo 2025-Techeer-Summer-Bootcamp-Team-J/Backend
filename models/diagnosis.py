@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table, VARCHAR, func, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table, VARCHAR, func, DateTime, Boolean, Text
 from sqlalchemy.orm import relationship
 from database.database import Base
 
@@ -21,20 +21,11 @@ class Diagnosis(Base):
     user_id = Column(Integer, ForeignKey("USER.user_id"), nullable=False)
     skin_type_id = Column(Integer, ForeignKey("SKINTYPE.skin_type_id"), nullable=True)
     
-    # YOLO 결과를 위한 컬럼들 추가
-    class_name = Column(VARCHAR(255), nullable=False)  # 질병 클래스명
-    confidence = Column(Float, nullable=False)  # 신뢰도
-    x1 = Column(Integer, nullable=False)  # bounding box 좌표
-    y1 = Column(Integer, nullable=False)
-    x2 = Column(Integer, nullable=False) 
-    y2 = Column(Integer, nullable=False)
     
     # 기존 컬럼들
-    expected_treat = Column(Integer, nullable=True)
-    severity = Column(Float, nullable=True)
-    image = Column(VARCHAR(255), nullable=True)
-    image_quality = Column(Integer, nullable=True)
-    after = Column(VARCHAR(255), nullable=True)
+    confidence = Column(Integer, nullable=True)
+    image = Column(Text, nullable=True)
+    after = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False) 

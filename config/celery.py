@@ -3,11 +3,15 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 from kombu import Exchange, Queue  # kombu에서 Queue와 Exchange 임포트
-import logging
+import logging 
 
-# 로컬 개발환경을 위한 직접 설정
-broker_url = "redis://localhost:6379/0"
-result_backend = "redis://localhost:6379/1"
+# 환경변수를 통한 동적 설정 (Docker 환경과 로컬 환경 모두 지원)
+# Docker 환경에서는 서비스 이름 'redis'를 사용, 로컬 환경에서는 localhost 사용
+redis_host = os.getenv('REDIS_HOST', 'redis')  # Docker 환경에서는 'redis', 로컬에서는 'localhost'로 오버라이드
+redis_port = os.getenv('REDIS_PORT', '6379')
+
+broker_url = f"redis://{redis_host}:{redis_port}/0"
+result_backend = f"redis://{redis_host}:{redis_port}/1"
 
 app = Celery('config',
               include=['tasks.diagnosis', 'tasks.skintype'],
@@ -18,9 +22,14 @@ app = Celery('config',
 # 태스크 자동 발견 및 명시적 임포트
 app.autodiscover_tasks()
 
+logger = logging.getLogger(__name__)
+logger.info(f"Celery app configured with broker: {broker_url}")
+logger.info(f"Celery app configured with result backend: {result_backend}")
+
 # 명시적으로 태스크 모듈 임포트
 try:
     from tasks import diagnosis, skintype
+    logger.info("태스크 모듈 임포트 성공")
 except ImportError as e:
     logger.error(f"태스크 모듈 임포트 실패: {str(e)}")
 
@@ -43,6 +52,5 @@ app.conf.task_default_queue = 'default'
 app.conf.task_default_exchange = 'default'
 app.conf.task_default_routing_key = 'default'
 
-logger = logging.getLogger(__name__)
-logger.info("Celery app configured for FastAPI project.")
+
 # logger.info("Current Celery Beat schedule: %s", app.conf.beat_schedule)
