@@ -1,7 +1,7 @@
-
 from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
 from database.database import engine
 from api.router import api_router
+from api.endpoints import uv_index
 from prometheus_fastapi_instrumentator import Instrumentator
 import os
 import logging
@@ -54,6 +54,7 @@ app = FastAPI()
 # post/router/post_router.py에서 main으로 라우팅
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
 app.include_router(api_router)
+
 
 # AI 모델 로드
 # app.state.model = YOLO("weights.pt")
