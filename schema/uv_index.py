@@ -1,14 +1,13 @@
-# schemas/uv_index.py
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 
 class UVIndexResponse(BaseModel):
-    area_name: str = Field(..., description="지역 이름", example="서울")
-    date: str = Field(..., description="측정 날짜 및 시간", example="2024052318")
-    today_uv: Optional[str] = Field(None, alias="today", description="오늘의 자외선 지수 예측값", example="5")
-    tomorrow_uv: Optional[str] = Field(None, alias="tomorrow", description="내일의 자외선 지수 예측값", example="6")
-    the_day_after_tomorrow_uv: Optional[str] = Field(None, alias="theDayAfterTomorrow", description="모레의 자외선 지수 예측값", example="7")
-
+    """UV 인덱스 API 응답 모델 - 대한민국 전체 범위"""
+    location: str = "대한민국"
+    date: str
+    today: str  # "최저~최고" 형태 예: "1~5"
+    
     class Config:
-        populate_by_name = True
+        json_encoders = {
+            # 필요한 경우 인코더 추가
+        } 

@@ -1,7 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
 from database.database import engine
 from api.router import api_router
-from api.endpoints import uv_index
 from prometheus_fastapi_instrumentator import Instrumentator
 import os
 import logging
@@ -19,7 +18,7 @@ import io
 os.makedirs("/app/logs", exist_ok=True)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO,  # DEBUG에서 INFO로 다시 변경
     format="%(asctime)s %(levelname)s %(message)s",
     handlers=[
         logging.FileHandler("/app/logs/app.log"),
@@ -63,6 +62,11 @@ app.include_router(api_router)
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
+
+# Health check 엔드포인트 추가
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "Service is running"}
 
 # Prometheus 메트릭을 위한 설정
 Instrumentator().instrument(app).expose(app)

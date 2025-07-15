@@ -1,9 +1,5 @@
-# api/endpoints/uv_index.py
-
-from fastapi import APIRouter, HTTPException, Path
-
-# 이 import 구문들이 절대 경로로 되어 있는지 확인!
-from services import uv_index as uv_service
+from fastapi import APIRouter, HTTPException
+from services.uv_index import fetch_korea_uv_range
 from schema.uv_index import UVIndexResponse
 
 router = APIRouter(
@@ -11,12 +7,23 @@ router = APIRouter(
     tags=["UV Index"]
 )
 
-@router.get("/{area_code}", response_model=UVIndexResponse, summary="특정 지역의 자외선 지수 조회")
-async def get_uv_index(
-    area_code: str = Path(..., min_length=8, max_length=10, description="조회할 지역의 코드", example="11B10101")
-):
+@router.get(
+    "/", 
+    response_model=UVIndexResponse,
+    summary="대한민국 자외선 지수 범위 조회",
+    description="대한민국 전체의 자외선 지수 최저~최고 범위를 조회합니다."
+)
+async def get_korea_uv_range():
+    """
+    대한민국 전체의 자외선 지수 범위를 조회합니다.
+    
+    - 전국 주요 지역의 UV 지수를 실시간으로 조회
+    - 최저~최고 범위로 표시
+    - 어제와의 차이 제공
+    """
     try:
-        uv_data = await uv_service.fetch_uv_index_from_kma(area_code)
-        return uv_data
-    except HTTPException as e:
-        raise e
+        return await fetch_korea_uv_range()
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="서버 내부 오류가 발생했습니다.") 
