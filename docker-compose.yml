@@ -56,6 +56,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/"]
       interval: 30s
@@ -66,7 +68,7 @@ services:
   # MySQL 데이터베이스
   mysql:
     image: mysql:latest
-    container_name: backend-mysql
+    container_name: mysql
     env_file:
       - .env
     environment:
@@ -106,7 +108,44 @@ services:
       retries: 5
       start_period: 10s
 
-# # 프로메테우스 메트릭 수집
+
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    ports:
+      - "${RABBITMQ_PORT}:5672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - backend-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      start_period: 10s
+
+  celery:
+    build: .
+    container_name: celery
+    command: celery -A config.celery worker --loglevel=info
+    volumes:
+      - .:/app
+    networks:
+      - backend-network
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "celery", "inspect", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+## 프로메테우스 메트릭 수집
+
 #   prometheus:
 #     image: prom/prometheus:latest
 #     container_name: prometheus
@@ -136,6 +175,7 @@ services:
 #       - backend-network
 
 
+
 # # 그라파나 메트릭 시각화
 #   grafana:
 #     image: grafana/grafana:latest
@@ -158,6 +198,7 @@ services:
 #     networks:
 #       - backend-network
 
+
 #   promtail:
 #     image: grafana/promtail:latest
 #     container_name: promtail
@@ -178,3 +219,4 @@ networks:
 volumes:
   mysql_data:
   redis_data:
+  rabbitmq_data:
