@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, Request, Path
+from fastapi import APIRouter, Depends, File, UploadFile, Form, HTTPException, Request
 from sqlalchemy.orm import Session
 from config.celery import app
 from models.diagnosis import Diagnosis
@@ -10,10 +10,9 @@ import base64
 from tasks.diagnosis import process_diagnosis_task
 
 from PIL import Image  # ← Image import 추가
-from schema.diagnosis import DiagnosisResponse, box_to_schema, BoundingBox, prediction_to_diagnosis_obj
+from schema.diagnosis import DiagnosisResponse, box_to_schema, BoundingBox, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, SimplifiedDiagnosisData, DiagnosisData, UserDiagnosisResponse, diagnosis_to_simple_schema
 import io  # ← io import 추가
 from typing import List
-from pydantic import BaseModel
 from inference_sdk import InferenceHTTPClient
 import tempfile
 import shutil
@@ -38,7 +37,8 @@ async def create_diagnosis_async(
 ):
     """
     이미지를 업로드하여 비동기 진단을 요청합니다.
-    태스크 ID를 반환하여 진행 상황을 추적할 수 있습니다.
+    태스크를 백그라운드에서 실행하고 즉시 태스크 ID를 반환합니다.
+    태스크 상태는 /diagnoses/tasks/{task_id}/status 엔드포인트로 확인할 수 있습니다.
     """
     # 파일이 이미지인지 간단히 확인
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -52,12 +52,13 @@ async def create_diagnosis_async(
         contents = await file.read()
         image_base64 = base64.b64encode(contents).decode('utf-8')
         
-        # Celery 태스크 실행 (Request와 db 객체 제거)
+        # Celery 태스크를 백그라운드에서 실행 (결과를 기다리지 않음)
         task = process_diagnosis_task.delay(user_id, image_base64)
         
+        # 즉시 태스크 ID와 상태 반환
         return TaskStartResponse(
             code=200,
-            message="진단 요청이 성공적으로 접수되었습니다",
+            message="진단 태스크가 성공적으로 시작되었습니다",
             task_id=task.id,
             status="PENDING"
         )
@@ -104,12 +105,12 @@ def get_task_status(task_id: str):
                 error=None
             )
         elif state == 'SUCCESS':
-            # 태스크 성공 시 결과를 DiagnosisResponse로 변환
+            # 태스크 성공 시 결과를 SimplifiedDiagnosisResponse로 변환
             try:
                 result_data = task.result
                 if result_data and isinstance(result_data, dict):
-                    # dict 형태의 결과를 DiagnosisResponse로 변환
-                    diagnosis_result = DiagnosisResponse(**result_data)
+                    # dict 형태의 결과를 SimplifiedDiagnosisResponse로 변환
+                    diagnosis_result = SimplifiedDiagnosisResponse(**result_data)
                     return TaskStatusResponse(
                         code=200,
                         message="태스크가 성공적으로 완료되었습니다",
@@ -186,9 +187,9 @@ def get_task_status(task_id: str):
 
 # <<< 기존 동기 진단 API (호환성을 위해 유지) >>>
 @router.post("/sync",
-             response_model=DiagnosisResponse, 
-             summary="동기 진단 요청 (레거시)",
-             description="이미지를 업로드하여 동기 진단을 요청합니다")
+             response_model=SimplifiedDiagnosisResponse, 
+             summary="동기 진단 요청 (간소화된 응답)",
+             description="이미지를 업로드하여 동기 진단을 요청합니다. 같은 질환명의 신뢰도를 합쳐서 100분위로 정규화하여 반환합니다.")
 async def create_diagnosis_sync(
     request: Request,
     user_id: int = Form(...), 
@@ -199,72 +200,135 @@ async def create_diagnosis_sync(
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(status_code=400, detail={"code": 400, "detail": "지원하지 않는 파일 형식입니다"})
 
-    # 업로드 파일을 임시 파일로 저장
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-        shutil.copyfileobj(file.file, tmp)
-        tmp_path = tmp.name
+    try:
+        # 이미지를 base64로 인코딩
+        contents = await file.read()
+        image_base64 = base64.b64encode(contents).decode('utf-8')
+        
+        # Base64를 이미지 파일로 변환하여 임시 파일로 저장
+        image_data = base64.b64decode(image_base64)
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            tmp.write(image_data)
+            tmp_path = tmp.name
 
-    # Roboflow inference API 호출
-    client = InferenceHTTPClient(
-        api_url="https://serverless.roboflow.com",
-        api_key=os.environ.get("ROBOFLOW_API_KEY")
-    )
-    result = client.run_workflow(
-        workspace_name="skin-classification-tm1gk",
-        workflow_id="detect-and-classify",
-        images={"image": tmp_path},
-        use_cache=True
-    )
+        # Roboflow inference API 호출
+        client = InferenceHTTPClient(
+            api_url="https://serverless.roboflow.com",
+            api_key=os.environ.get("ROBOFLOW_API_KEY")
+        )
+        result = client.run_workflow(
+            workspace_name="skin-classification-tm1gk",
+            workflow_id="detect-and-classify",
+            images={"image": tmp_path},
+            use_cache=True
+        )
 
-    # 임시 파일 삭제
-    os.remove(tmp_path)
+        # 임시 파일 삭제
+        os.remove(tmp_path)
 
-    # Roboflow 결과 파싱
-    predictions = []
-    # result가 리스트라면 첫 번째 요소를 사용
-    if isinstance(result, list) and len(result) > 0:
-        result = result[0]
-    if isinstance(result, dict):
-        output = result.get('output', {})
-        predictions_dict = output.get('predictions', {})
-        predictions = predictions_dict.get('predictions', [])
+        # Roboflow 결과 파싱
+        predictions = []
+        if isinstance(result, list) and len(result) > 0:
+            result = result[0]
+        if isinstance(result, dict):
+            output = result.get('output', {})
+            predictions_dict = output.get('predictions', {})
+            predictions = predictions_dict.get('predictions', [])
 
-    # DB 저장 및 응답 생성
-    saved_diagnoses = []
-    print("Roboflow result:", result)
-    print("파싱된 predictions:", predictions)
-    for pred in predictions:
-        try:
-            print("예측 결과 pred:", pred)
-            db_diagnosis = prediction_to_diagnosis_obj(pred, user_id)
-            db.add(db_diagnosis)
+        # 간소화된 응답 생성
+        simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
+        
+        # DB 저장 - 비동기 태스크와 동일한 방식으로 처리
+        if simplified_data:
+            # 하나의 diagnosis 레코드 생성
+            max_confidence = max(data.confidence for data in simplified_data)
+            
+            diagnosis = Diagnosis(
+                user_id=user_id,
+                confidence=int(max_confidence),  # 가장 높은 confidence를 저장
+                image=image_base64
+            )
+            
+            db.add(diagnosis)
             db.commit()
-            db.refresh(db_diagnosis)
-            saved_diagnoses.append(db_diagnosis)
-        except Exception as e:
-            print("DB 저장 중 오류:", e)
-    print("최종 saved_diagnoses:", saved_diagnoses)
+            db.refresh(diagnosis)
+            
+            # 각 질환을 diagnosis와 연결
+            from models.diseases import Disease
+            for disease_data in simplified_data:
+                # 질환이 DB에 존재하는지 확인
+                disease = db.query(Disease).filter(Disease.disease_name == disease_data.disease_name).first()
+                if disease:
+                    # 이미 연결되어 있지 않다면 연결
+                    if disease not in diagnosis.diseases:
+                        diagnosis.diseases.append(disease)
+                else:
+                    print(f"질환 '{disease_data.disease_name}'을 DB에서 찾을 수 없습니다.")
+            
+            # 질환 연결 정보 저장
+            db.commit()
+            
+            print(f"진단 ID {diagnosis.diagnosis_id}로 {len(simplified_data)}개 질환 저장 완료")
 
-    return DiagnosisResponse(
-        code=200,
-        message="진단정보 생성 성공",
-        data=[box_to_schema(d) for d in saved_diagnoses]
-    )
+        return SimplifiedDiagnosisResponse(
+            code=200,
+            message="진단정보 생성 성공",
+            data=simplified_data
+        )
+        
+    except Exception as e:
+        print(f"동기 진단 처리 중 오류: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail={"code": 500, "detail": f"진단 처리 중 오류가 발생했습니다: {str(e)}"}
+        )
 
-@router.get("/users/{user_id}", response_model=DiagnosisResponse, summary="유저 진단 조회", description="유저 진단 목록을 조회합니다")
+@router.get("/users/{user_id}", response_model=UserDiagnosisResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+    try:
+        # user_id 유효성 검사 - 0보다 큰 양수여야 함
+        if user_id <= 0:
+            raise HTTPException(status_code=400, detail={"code": 400, "message": "유효하지 않은 사용자 ID입니다"})
 
-    if not user_id:
-        raise HTTPException(status_code=500, detail="없는 사용자 입니다")
+        # 삭제되지 않은 진단 데이터만 조회 (diseases 관계도 함께 로드)
+        diagnoses = db.query(Diagnosis).filter(
+            Diagnosis.user_id == user_id,
+            Diagnosis.is_deleted == False
+        ).all()
 
-    diagnoses = db.query(Diagnosis).filter(Diagnosis.user_id == user_id).all()
+        # 진단 데이터가 없는 경우 빈 배열로 응답 (404 대신 200으로 처리)
+        if not diagnoses:
+            return UserDiagnosisResponse(
+                code=200, 
+                message="해당 사용자의 진단 데이터가 없습니다", 
+                data=[]
+            )
 
-    if not diagnoses:
-        raise HTTPException(status_code=500, detail="진단 데이터가 없습니다")
-
-    return {"code": 200, "message": "특정 사용자의 모든 진단 조회 성공", 
-    "data": [box_to_schema(d) for d in diagnoses]
-    }
+        # 정상적인 경우 진단 데이터 반환
+        diagnosis_data = []
+        for d in diagnoses:
+            try:
+                diagnosis_data.append(diagnosis_to_simple_schema(d))
+            except Exception as e:
+                print(f"진단 데이터 변환 중 오류 발생 (ID: {getattr(d, 'id', 'Unknown')}): {e}")
+                continue
+        
+        return UserDiagnosisResponse(
+            code=200, 
+            message="특정 사용자의 모든 진단 조회 성공", 
+            data=diagnosis_data
+        )
+        
+    except HTTPException:
+        # HTTPException은 다시 발생시킴
+        raise
+    except Exception as e:
+        print(f"사용자 진단 조회 중 예상치 못한 오류 발생: {e}")
+        raise HTTPException(
+            status_code=500, 
+            detail={"code": 500, "message": f"진단 데이터 조회 중 오류가 발생했습니다: {str(e)}"}
+        )
 
 @router.delete("/{diagnosis_id}", summary="진단 삭제", description="진단 정보를 삭제합니다")
 def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends(get_db)):
