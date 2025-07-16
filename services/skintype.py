@@ -181,4 +181,3 @@ def get_type_description_by_id(db: Session, skintype_id: int):
     if not skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
     return skintype.type_description
-

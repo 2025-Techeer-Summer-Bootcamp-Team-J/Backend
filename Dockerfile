@@ -1,5 +1,5 @@
-# Python 3.13.1 slim 이미지 사용
-FROM python:3.13.1-slim
+# Python 3.11 slim 이미지 사용
+FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED 1
 ENV PYTHONDONTWRITEBYTECODE 1
