@@ -13,13 +13,35 @@ redis_port = os.getenv('REDIS_PORT', '6379')
 broker_url = f"redis://{redis_host}:{redis_port}/0"
 result_backend = f"redis://{redis_host}:{redis_port}/1"
 
-app = Celery('config',
-              include=['tasks.diagnosis', 'tasks.skintype'],
-              broker=broker_url,
-              backend=result_backend,
-              broker_transport_options={'visibility_timeout': 3600})
+app = Celery(
+    'Backend',
+    broker=broker_url,
+    backend=result_backend,
+    include=['tasks.diagnosis', 'tasks.skintype', 'tasks.uv_index']
+)
 
-# 태스크 자동 발견 및 명시적 임포트
+# Celery 설정
+app.conf.update(
+    task_serializer='json',
+    result_serializer='json',
+    accept_content=['json'],
+    timezone='Asia/Seoul', # 시간대 설정
+    enable_utc=False,
+    broker_connection_retry_on_startup=True,
+    # 주기적인 태스크 설정 (Celery Beat)
+    beat_schedule={
+        'update-uv-index-every-hour': {
+            'task': 'tasks.uv_index.update_uv_index_task',
+            'schedule': crontab(minute=0), # 매시 0분에 실행
+            'args': (),
+            'kwargs': {},
+            'options': {'queue': 'default'}
+        },
+        # 다른 주기적인 태스크가 있다면 여기에 추가
+    }
+)
+
+# Celery worker가 태스크를 찾을 수 있도록 자동 디스커버리 설정
 app.autodiscover_tasks()
 
 logger = logging.getLogger(__name__)
