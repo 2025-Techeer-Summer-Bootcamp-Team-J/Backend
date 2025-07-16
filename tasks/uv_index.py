@@ -6,6 +6,7 @@ from services.uv_index import fetch_korea_uv_range
 from datetime import datetime
 import re
 import logging
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,8 @@ def update_uv_index_task():
     logger.info("Celery 태스크: 자외선 지수 업데이트 시작")
     db: Session = next(get_db())
     try:
-        uv_response = fetch_korea_uv_range()
+        # async 함수를 동기 환경에서 실행
+        uv_response = asyncio.run(fetch_korea_uv_range())
 
         uv_index_value = None
         match = re.search(r'\d+', uv_response.now)

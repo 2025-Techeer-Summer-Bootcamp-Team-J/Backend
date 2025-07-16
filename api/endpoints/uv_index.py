@@ -6,6 +6,7 @@ from schema.uv_index import UVIndexResponse
 from schema.ResultResponseModel import ResultResponseModel
 from services.uv_index import fetch_korea_uv_range # 추가: 실시간 조회를 위해 임포트
 from datetime import datetime
+import pytz
 import re
 
 router = APIRouter(
@@ -37,7 +38,7 @@ async def get_latest_uv_index(db: Session = Depends(get_db)):
         # UVIndexResponse 스키마를 사용하여 데이터 포맷팅
         uv_data = UVIndexResponse(
             location="대한민국",
-            date=latest_uv_record.create_at.strftime("%Y-%m-%d"),
+            date=latest_uv_record.create_at.strftime("%Y년%m월%d일%H시"),
             now=str(latest_uv_record.uv_Index)
         )
         return ResultResponseModel(
@@ -80,7 +81,7 @@ async def save_korea_uv_range_live(db: Session = Depends(get_db)):
             new_uv_record = UVIndex(
                 date=parsed_date.date(), # 날짜만 저장
                 uv_Index=uv_index_value,
-                create_at=datetime.now()
+                create_at=datetime.now(pytz.timezone('Asia/Seoul'))
             )
             db.add(new_uv_record)
             db.commit()
