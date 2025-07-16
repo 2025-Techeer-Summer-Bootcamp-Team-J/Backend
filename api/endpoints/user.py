@@ -7,8 +7,9 @@ from sqlalchemy.exc import IntegrityError
 from datetime import datetime
 from models.user import User
 from schema.user import UserCreate, UserRead
+from services.dashboard import get_dashboard
 
-router = APIRouter(prefix="/user", tags=["user"])
+router = APIRouter(prefix="/users", tags=["user"])
 
 @router.get("", summary="user 테이블 조회", description="user 테이블 정보를 조회합니다")
 def get_user(db: Session = Depends(get_db)):
@@ -35,4 +36,14 @@ def signup(req: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="중복된 이메일입니다.")
     except Exception as e:
         # 기타 예외 처리 추가
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"서버 에러: {str(e)}")
+
+@router.get("/{user_id}/dashboard", summary="유저 대시보드 조회", description="유저 대시보드를 조회합니다")
+def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
+    try:
+        dashboard = get_dashboard(db, user_id)
+        return ResultResponseModel(status_code=200, message="유저 대시보드 조회 성공", data=dashboard)
+    except HTTPException as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"dashboard 불러오기 실패: {str(e)}")
+    except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"서버 에러: {str(e)}")

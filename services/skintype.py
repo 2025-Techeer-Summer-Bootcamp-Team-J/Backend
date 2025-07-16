@@ -53,11 +53,17 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
         }
         
         with create_session_with_retry() as session:
-            response = session.post(url, headers=headers, files=files, timeout=(10, 60))
+            # files 딕셔너리의 value를 (filename, fileobj, content_type)에서 (filename, fileobj, content_type)로 전달하면
+            # requests의 타입 검사에서 오류가 발생할 수 있으므로, content_type을 생략하거나 명시적으로 typing을 맞춰줍니다.
+            # requests는 (filename, fileobj) 또는 (filename, fileobj, content_type) 튜플을 허용합니다.
+            # 하지만 mypy 등에서 경고가 발생할 수 있으므로, 아래와 같이 content_type을 명시적으로 str로 지정합니다.
+            files_for_requests = {
+                'image': (image_file.filename or 'image.jpg', io.BytesIO(image_data), image_file.content_type or 'application/octet-stream')
+            }
+            response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60))
             
             if response.status_code != 200:
                 raise HTTPException(status_code=response.status_code, detail="AILab API 호출 실패")
-            
             return response.json()
         
     except requests.exceptions.Timeout:

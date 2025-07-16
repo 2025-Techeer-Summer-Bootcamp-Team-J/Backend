@@ -28,12 +28,12 @@ router = APIRouter(
 
 # <<< 비동기 진단 요청 API >>>
 @router.post("",
-             response_model=TaskStartResponse, 
+             response_model=TaskStartResponse,
              summary="비동기 진단 요청",
              description="이미지를 업로드하여 비동기 진단을 요청합니다")
 async def create_diagnosis_async(
-    user_id: int = Form(...), 
-    file: UploadFile = File(...), 
+    user_id: int = Form(...),
+    file: UploadFile = File(...),
 ):
     """
     이미지를 업로드하여 비동기 진단을 요청합니다.
@@ -43,7 +43,7 @@ async def create_diagnosis_async(
     # 파일이 이미지인지 간단히 확인
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail={"code": 400, "detail": "지원하지 않는 파일 형식입니다"}
         )
 
@@ -51,10 +51,10 @@ async def create_diagnosis_async(
         # 이미지 파일을 Base64로 인코딩
         contents = await file.read()
         image_base64 = base64.b64encode(contents).decode('utf-8')
-        
+
         # Celery 태스크를 백그라운드에서 실행 (결과를 기다리지 않음)
         task = process_diagnosis_task.delay(user_id, image_base64)
-        
+
         # 즉시 태스크 ID와 상태 반환
         return TaskStartResponse(
             code=200,
@@ -62,7 +62,7 @@ async def create_diagnosis_async(
             task_id=task.id,
             status="PENDING"
         )
-        
+
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -79,7 +79,7 @@ def get_task_status(task_id: str):
     """
     태스크 ID를 통해 진단 태스크의 현재 상태를 조회합니다.
     """
-    
+
     try:
         # 태스크 ID 유효성 검사
         if not task_id or task_id.strip() == "":
@@ -87,13 +87,13 @@ def get_task_status(task_id: str):
                 status_code=400,
                 detail={"code": 400, "detail": "유효하지 않은 태스크 ID입니다"}
             )
-            
+
         # Celery에서 태스크 상태 조회
         task = app.AsyncResult(task_id)
-        
+
         # 태스크 상태 확인
         state = task.state
-        
+
         if state == 'PENDING':
             return TaskStatusResponse(
                 code=200,
@@ -173,7 +173,7 @@ def get_task_status(task_id: str):
                 result=None,
                 error=None
             )
-            
+
     except ConnectionError as e:
         raise HTTPException(
             status_code=503,
@@ -187,7 +187,7 @@ def get_task_status(task_id: str):
 
 # <<< 기존 동기 진단 API (호환성을 위해 유지) >>>
 @router.post("/sync",
-             response_model=SimplifiedDiagnosisResponse, 
+             response_model=SimplifiedDiagnosisResponse,
              summary="동기 진단 요청 (간소화된 응답)",
              description="이미지를 업로드하여 동기 진단을 요청합니다. 같은 질환명의 신뢰도를 합쳐서 100분위로 정규화하여 반환합니다.")
 async def create_diagnosis_sync(
@@ -204,7 +204,7 @@ async def create_diagnosis_sync(
         # 이미지를 base64로 인코딩
         contents = await file.read()
         image_base64 = base64.b64encode(contents).decode('utf-8')
-        
+
         # Base64를 이미지 파일로 변환하여 임시 파일로 저장
         image_data = base64.b64decode(image_base64)
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
@@ -237,22 +237,22 @@ async def create_diagnosis_sync(
 
         # 간소화된 응답 생성
         simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
-        
+
         # DB 저장 - 비동기 태스크와 동일한 방식으로 처리
         if simplified_data:
             # 하나의 diagnosis 레코드 생성
             max_confidence = max(data.confidence for data in simplified_data)
-            
+
             diagnosis = Diagnosis(
                 user_id=user_id,
                 confidence=int(max_confidence),  # 가장 높은 confidence를 저장
                 image=image_base64
             )
-            
+
             db.add(diagnosis)
             db.commit()
             db.refresh(diagnosis)
-            
+
             # 각 질환을 diagnosis와 연결
             from models.diseases import Disease
             for disease_data in simplified_data:
@@ -264,10 +264,10 @@ async def create_diagnosis_sync(
                         diagnosis.diseases.append(disease)
                 else:
                     print(f"질환 '{disease_data.disease_name}'을 DB에서 찾을 수 없습니다.")
-            
+
             # 질환 연결 정보 저장
             db.commit()
-            
+
             print(f"진단 ID {diagnosis.diagnosis_id}로 {len(simplified_data)}개 질환 저장 완료")
 
         return SimplifiedDiagnosisResponse(
@@ -275,7 +275,7 @@ async def create_diagnosis_sync(
             message="진단정보 생성 성공",
             data=simplified_data
         )
-        
+
     except Exception as e:
         print(f"동기 진단 처리 중 오류: {e}")
         db.rollback()
@@ -300,8 +300,8 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
         # 진단 데이터가 없는 경우 빈 배열로 응답 (404 대신 200으로 처리)
         if not diagnoses:
             return UserDiagnosisResponse(
-                code=200, 
-                message="해당 사용자의 진단 데이터가 없습니다", 
+                code=200,
+                message="해당 사용자의 진단 데이터가 없습니다",
                 data=[]
             )
 
@@ -313,20 +313,20 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
             except Exception as e:
                 print(f"진단 데이터 변환 중 오류 발생 (ID: {getattr(d, 'id', 'Unknown')}): {e}")
                 continue
-        
+
         return UserDiagnosisResponse(
-            code=200, 
-            message="특정 사용자의 모든 진단 조회 성공", 
+            code=200,
+            message="특정 사용자의 모든 진단 조회 성공",
             data=diagnosis_data
         )
-        
+
     except HTTPException:
         # HTTPException은 다시 발생시킴
         raise
     except Exception as e:
         print(f"사용자 진단 조회 중 예상치 못한 오류 발생: {e}")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail={"code": 500, "message": f"진단 데이터 조회 중 오류가 발생했습니다: {str(e)}"}
         )
 
@@ -338,7 +338,7 @@ def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends
     deleted_data_schema = box_to_schema(deleted_diagnosis)
 
     return DiagnosisResponse(
-        code=200, 
-        message="진단 정보 삭제 성공", 
+        code=200,
+        message="진단 정보 삭제 성공",
         data=[deleted_data_schema]
     )
