@@ -32,7 +32,7 @@ app.conf.update(
     beat_schedule={
         'update-uv-index-every-hour': {
             'task': 'tasks.uv_index.update_uv_index_task',
-            'schedule': crontab(minute='*/1'), # 매시 0분에 실행
+            'schedule': crontab(minute='0'), # 매시 0분에 실행
             'args': (),
             'kwargs': {},
             'options': {'queue': 'default'}
