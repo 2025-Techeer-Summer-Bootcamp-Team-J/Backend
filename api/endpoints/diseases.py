@@ -36,7 +36,8 @@ def get_disease_by_id_endpoint(disease_id: int, db: Session = Depends(get_db)):
     except HTTPException as e:
         raise HTTPException(
             status_code=400,
-            detail="찾을 수 없는 잘환id 입니다.")
+            detail="찾을 수 없는 질환id 입니다.")
+
     except Exception as e:
         raise HTTPException(
             status_code=500,

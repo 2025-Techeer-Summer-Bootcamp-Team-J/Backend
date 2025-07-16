@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
 from schema.ResultResponseModel import ResultResponseModel
 from services.diseases import create_disease as create_disease_service, delete_disease as delete_disease_service, update_disease as update_disease_service, get_disease_table as get_disease_table
 from services.skintype import create_skintype as create_skintype_service, delete_skintype as delete_skintype_service, update_skintype as update_skintype_service, get_skintype_table as get_skintype_table
 from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseRead
 from schema.skintype import SkinTypeCreate, SkinTypeUpdate, SkinTypeRead
+from services.diagnosis import get_diagnosis_table as get_diagnosis_table
 from database.database import get_db
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -57,3 +57,8 @@ def delete_skintype(skin_type_id: int, db: Session = Depends(get_db)):
         return ResultResponseModel(status_code=400, message="피부유형 정보가 없습니다")
     response=delete_skintype_service(db, skin_type_id)
     return ResultResponseModel(status_code=200, message="피부유형 삭제 성공", data=response)
+
+@router.get("/diagnosis", summary="진단정보 테이블 조회", description="진단정보 테이블을 조회합니다")
+def get_diagnosis(db: Session = Depends(get_db)):
+    response=get_diagnosis_table(db)
+    return ResultResponseModel(status_code=200, message="진단 테이블 조회 성공", data=response)
