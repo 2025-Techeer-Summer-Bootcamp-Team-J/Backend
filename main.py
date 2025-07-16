@@ -1,4 +1,3 @@
-
 from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import engine
@@ -10,9 +9,7 @@ import logging
 
 # YOLOv8 skin disease detection 추가 import
 from fastapi.responses import JSONResponse
-from PIL import Image
-from ultralytics import YOLO
-import io
+
 
 # 로깅 설정 /app/logs/app.log 파일에 로깅
 
@@ -20,7 +17,7 @@ import io
 os.makedirs("/app/logs", exist_ok=True)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.INFO,  # DEBUG에서 INFO로 다시 변경
     format="%(asctime)s %(levelname)s %(message)s",
     handlers=[
         logging.FileHandler("/app/logs/app.log"),
@@ -66,6 +63,7 @@ app.add_middleware(
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
 app.include_router(api_router)
 
+
 # AI 모델 로드
 #app.state.model = YOLO("weights.pt")
 
@@ -73,6 +71,11 @@ app.include_router(api_router)
 @app.get("/")
 def read_root():
     return {"message": "Hello, World!"}
+
+# Health check 엔드포인트 추가
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "Service is running"}
 
 # Prometheus 메트릭을 위한 설정
 #Instrumentator().instrument(app).expose(app)
