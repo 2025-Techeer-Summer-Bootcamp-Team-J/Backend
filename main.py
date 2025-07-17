@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadF
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import engine
 from api.router import api_router
-#from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_fastapi_instrumentator import Instrumentator
 import os
 import logging
 #서버가 실행되는 메인 공간
@@ -78,6 +78,6 @@ def health_check():
     return {"status": "healthy", "message": "Service is running"}
 
 # Prometheus 메트릭을 위한 설정
-#Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app)
 
 logging.info("FastAPI 서버가 시작됩니다!")
