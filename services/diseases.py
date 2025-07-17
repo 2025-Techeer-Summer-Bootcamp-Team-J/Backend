@@ -245,3 +245,4 @@ def get_disease_by_id(db: Session, disease_id: int):
     if not disease:
         raise HTTPException(status_code=404, detail="질병 정보가 없습니다")
     return DiseaseRead.model_validate(disease)
+
