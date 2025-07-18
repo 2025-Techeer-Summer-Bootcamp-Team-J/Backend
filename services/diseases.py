@@ -11,6 +11,9 @@ from PIL import Image
 import io
 import logging
 import re # Import the re module
+from models.detailed_disease_info import DetailedDiseaseInfo
+from schema.detailed_disease_info import DetailedDiseaseInfoCreate
+import base64 # For image_base64
 
 load_dotenv()
 
@@ -245,4 +248,88 @@ def get_disease_by_id(db: Session, disease_id: int):
     if not disease:
         raise HTTPException(status_code=404, detail="질병 정보가 없습니다")
     return DiseaseRead.model_validate(disease)
+
+async def generate_and_save_detailed_disease_info(
+    db: Session, image_bytes: bytes, disease_name: str
+) -> int:
+    """
+    Generates detailed disease info via streaming, aggregates it, and saves to DB.
+    Returns the ID of the newly created record.
+    """
+    # Initialize data structures to aggregate streamed content
+    image_analysis_data = {}
+    text_analysis_data = {
+        "ai_opinion": "",
+        "detailed_description": "",
+        "precautions": [],
+        "management": {}
+    }
+
+    # Convert image bytes to base64 for storage
+    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
+
+    # Iterate through the streaming service to collect all data
+    async for event_str in generate_disease_info_stream_service(image_bytes, disease_name):
+        # Extract JSON part from SSE format: "data: {json_string}\n\n"
+        if event_str.startswith("data: "):
+            try:
+                event_json = json.loads(event_str[len("data: "):].strip())
+                event_type = event_json.get("type")
+                event_data = event_json.get("data")
+
+                if event_type == "image_analysis":
+                    image_analysis_data = event_data
+                elif event_type == "ai_opinion_chunk":
+                    text_analysis_data["ai_opinion"] += event_data + " "
+                elif event_type == "detailed_description_chunk":
+                    text_analysis_data["detailed_description"] += event_data + " "
+                elif event_type == "precautions_item_start":
+                    # For precautions, we need to handle items as they come
+                    # This assumes precautions are streamed item by item
+                    text_analysis_data["precautions"].append("") # Add a new empty string for the current precaution
+                elif event_type == "precautions_chunk":
+                    if text_analysis_data["precautions"]:
+                        text_analysis_data["precautions"][-1] += event_data + " "
+                elif event_type == "management_item_start":
+                    # For management, assuming it's a dict with keys streamed
+                    current_management_key = event_data # The key is in event_data
+                    text_analysis_data["management"][current_management_key] = ""
+                elif event_type == "management_chunk":
+                    # This assumes management chunks are for the *last* key added
+                    if text_analysis_data["management"]:
+                        last_key = list(text_analysis_data["management"].keys())[-1]
+                        text_analysis_data["management"][last_key] += event_data + " "
+
+            except json.JSONDecodeError as e:
+                logger.error(f"Error decoding JSON from SSE event: {e} - {event_str}")
+            except Exception as e:
+                logger.error(f"Error processing SSE event: {e} - {event_str}")
+
+    # Clean up trailing spaces from collected text data
+    text_analysis_data["ai_opinion"] = text_analysis_data["ai_opinion"].strip()
+    text_analysis_data["detailed_description"] = text_analysis_data["detailed_description"].strip()
+    text_analysis_data["precautions"] = [p.strip() for p in text_analysis_data["precautions"]]
+    for key, value in text_analysis_data["management"].items():
+        text_analysis_data["management"][key] = value.strip()
+
+    # Create a DetailedDiseaseInfoCreate schema object
+    detailed_info_data = DetailedDiseaseInfoCreate(
+        disease_name=disease_name,
+        image_base64=image_base64,
+        skin_score=image_analysis_data.get("skin_score"),
+        severity=image_analysis_data.get("severity"),
+        estimated_treatment_period=image_analysis_data.get("estimated_treatment_period"),
+        ai_opinion=text_analysis_data.get("ai_opinion"),
+        detailed_description=text_analysis_data.get("detailed_description"),
+        precautions=text_analysis_data.get("precautions"),
+        management=text_analysis_data.get("management"),
+    )
+
+    # Save to database
+    db_detailed_info = DetailedDiseaseInfo(**detailed_info_data.model_dump())
+    db.add(db_detailed_info)
+    db.commit()
+    db.refresh(db_detailed_info)
+
+    return db_detailed_info.id
 

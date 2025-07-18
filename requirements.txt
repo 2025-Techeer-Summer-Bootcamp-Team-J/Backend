@@ -36,4 +36,4 @@ kombu==5.4.2
 inference-sdk==0.51.3
 pytz==2024.1
 google-generativeai
-Pillow
+Pillow==11.1.0

@@ -18,6 +18,11 @@ import tempfile
 import shutil
 import os
 from services.diagnosis import delete_diagnosis
+from models.detailed_disease_info import DetailedDiseaseInfo
+from schema.detailed_disease_info import DetailedDiseaseInfoRead, DetailedDiseaseInfoResponse
+import json # For json.loads
+from services.diseases import generate_and_save_detailed_disease_info
+from schema.ResultResponseModel import ResultResponseModel
 
 
 
@@ -342,3 +347,75 @@ def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends
         message="진단 정보 삭제 성공",
         data=[deleted_data_schema]
     )
+
+@router.get("/{diagnosis_id}", response_model=SimplifiedDiagnosisResponse, summary="진단 세부 정보 조회", description="진단 ID를 통해 진단 세부 정보를 조회합니다.")
+def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
+    """
+    진단 ID를 통해 진단 세부 정보를 조회합니다.
+    """
+    diagnosis = db.query(Diagnosis).filter(Diagnosis.diagnosis_id == diagnosis_id).first()
+
+    if not diagnosis:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": 404, "message": "진단 정보를 찾을 수 없습니다."}
+        )
+
+    # SimplifiedDiagnosisResponse 스키마에 맞게 데이터 변환
+    try:
+        simplified_data = diagnosis_to_simple_schema(diagnosis)
+        return SimplifiedDiagnosisResponse(
+            code=200,
+            message="진단 세부 정보 조회 성공",
+            data=simplified_data
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"code": 500, "message": f"진단 데이터 변환 중 오류가 발생했습니다: {str(e)}"}
+        )
+
+@router.post("/generate-and-save", summary="질병 정보 생성 및 저장", description="사진과 질병명을 받아 상세 정보를 생성하고 DB에 저장합니다.")
+async def generate_and_save_detailed_disease_info_endpoint(
+    disease_name: str = Form(...),
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    try:
+        image_bytes = await image.read()
+        record_id = await generate_and_save_detailed_disease_info(db, image_bytes, disease_name)
+        return ResultResponseModel(
+            status_code=200,
+            message="질병 정보 생성 및 저장 성공",
+            data={"id": record_id}
+        )
+    except Exception as e:
+        print(f"Error in generate_and_save_detailed_disease_info_endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"질병 정보 생성 및 저장 실패: {e}")
+
+@router.get("/detailed/{diagnosis_id}", response_model=DetailedDiseaseInfoResponse, summary="저장된 질병 상세 정보 조회", description="저장된 질병 상세 정보를 ID로 조회합니다.")
+def get_detailed_disease_info_by_id(
+    diagnosis_id: int,
+    db: Session = Depends(get_db)
+):
+    try:
+        detailed_info = db.query(DetailedDiseaseInfo).filter(DetailedDiseaseInfo.id == diagnosis_id).first()
+        if not detailed_info:
+            raise HTTPException(status_code=404, detail={"code": 404, "message": "상세 질병 정보를 찾을 수 없습니다."})
+        
+        # Convert JSON strings back to Python objects for Pydantic model
+        if detailed_info.precautions:
+            detailed_info.precautions = json.loads(detailed_info.precautions)
+        if detailed_info.management:
+            detailed_info.management = json.loads(detailed_info.management)
+
+        return DetailedDiseaseInfoResponse(
+            code=200,
+            message="상세 질병 정보 조회 성공",
+            data=DetailedDiseaseInfoRead.model_validate(detailed_info)
+        )
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        print(f"Error in get_detailed_disease_info_by_id: {e}")
+        raise HTTPException(status_code=500, detail=f"상세 질병 정보 조회 실패: {e}")
