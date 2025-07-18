@@ -243,38 +243,6 @@ async def create_diagnosis_sync(
         # 간소화된 응답 생성
         simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
 
-        # DB 저장 - 비동기 태스크와 동일한 방식으로 처리
-        if simplified_data:
-            # 하나의 diagnosis 레코드 생성
-            max_confidence = max(data.confidence for data in simplified_data)
-
-            diagnosis = Diagnosis(
-                user_id=user_id,
-                confidence=int(max_confidence),  # 가장 높은 confidence를 저장
-                image=image_base64
-            )
-
-            db.add(diagnosis)
-            db.commit()
-            db.refresh(diagnosis)
-
-            # 각 질환을 diagnosis와 연결
-            from models.diseases import Disease
-            for disease_data in simplified_data:
-                # 질환이 DB에 존재하는지 확인
-                disease = db.query(Disease).filter(Disease.disease_name == disease_data.disease_name).first()
-                if disease:
-                    # 이미 연결되어 있지 않다면 연결
-                    if disease not in diagnosis.diseases:
-                        diagnosis.diseases.append(disease)
-                else:
-                    print(f"질환 '{disease_data.disease_name}'을 DB에서 찾을 수 없습니다.")
-
-            # 질환 연결 정보 저장
-            db.commit()
-
-            print(f"진단 ID {diagnosis.diagnosis_id}로 {len(simplified_data)}개 질환 저장 완료")
-
         return SimplifiedDiagnosisResponse(
             code=200,
             message="진단정보 생성 성공",
@@ -375,7 +343,7 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
             detail={"code": 500, "message": f"진단 데이터 변환 중 오류가 발생했습니다: {str(e)}"}
         )
 
-@router.post("/generate-and-save", summary="질병 정보 생성 및 저장", description="사진과 질병명을 받아 상세 정보를 생성하고 DB에 저장합니다.")
+@router.post("/generate-and-save", summary="진단 정보 생성 및 저장", description="사진과 질병명을 받아 상세 진단 정보를 생성하고 DB에 저장합니다.")
 async def generate_and_save_detailed_disease_info_endpoint(
     disease_name: str = Form(...),
     image: UploadFile = File(...),
