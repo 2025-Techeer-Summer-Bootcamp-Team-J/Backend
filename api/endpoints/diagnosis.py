@@ -4,6 +4,9 @@ from config.celery import app
 from models.diagnosis import Diagnosis
 from database.database import get_db
 
+from schema.detailed_disease_info import DetailedDiseaseInfoRead, DetailedDiseaseInfoResponse
+import json # For json.loads
+
 from schema.Task import TaskStartResponse, TaskStatusResponse, TaskProgressInfo
 
 import base64
@@ -17,11 +20,7 @@ from inference_sdk import InferenceHTTPClient
 import tempfile
 import shutil
 import os
-from services.diagnosis import delete_diagnosis
-from models.detailed_disease_info import DetailedDiseaseInfo
-from schema.detailed_disease_info import DetailedDiseaseInfoRead, DetailedDiseaseInfoResponse
-import json # For json.loads
-from services.diseases import generate_and_save_detailed_disease_info
+from services.diagnosis import delete_diagnosis, generate_and_save_detailed_disease_info
 from schema.ResultResponseModel import ResultResponseModel
 
 
