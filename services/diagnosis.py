@@ -71,15 +71,19 @@ async def generate_and_save_detailed_disease_info(
                 elif event_type == "precautions_chunk":
                     if text_analysis_data["precautions"]:
                         text_analysis_data["precautions"][-1] += event_data + " "
-                elif event_type == "management_item_start":
-                    # For management, assuming it's a dict with keys streamed
-                    current_management_key = event_data # The key is in event_data
+                current_management_key = None
+    async for event_str in generate_disease_info_stream_service(image_bytes, disease_name):
+        if event_str.startswith("data: "):
+            try:
+                event_json = json.loads(event_str[len("data: "):].strip())
+                event_type = event_json.get("type")
+                event_data = event_json.get("data")
+                if event_type == "management_item_start":
+                    current_management_key = event_data
                     text_analysis_data["management"][current_management_key] = ""
                 elif event_type == "management_chunk":
-                    # This assumes management chunks are for the *last* key added
-                    if text_analysis_data["management"]:
-                        last_key = list(text_analysis_data["management"].keys())[-1]
-                        text_analysis_data["management"][last_key] += event_data + " "
+                    if current_management_key in text_analysis_data["management"]:
+                        text_analysis_data["management"][current_management_key] += event_data + " "
 
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON from SSE event: {e} - {event_str}")
@@ -106,8 +110,11 @@ async def generate_and_save_detailed_disease_info(
         management=text_analysis_data.get("management"),
     )
 
-    # Save to database
-    db_detailed_info = DetailedDiseaseInfo(**detailed_info_data.model_dump())
+    from models.detailed_disease_info import DetailedDiseaseInfo
+    detailed_info_data_dict = detailed_info_data.model_dump()
+    detailed_info_data_dict['precautions'] = json.dumps(detailed_info_data_dict['precautions'], ensure_ascii=False)
+    detailed_info_data_dict['management'] = json.dumps(detailed_info_data_dict['management'], ensure_ascii=False)
+    db_detailed_info = DetailedDiseaseInfo(**detailed_info_data_dict)
     db.add(db_detailed_info)
     db.commit()
     db.refresh(db_detailed_info)
