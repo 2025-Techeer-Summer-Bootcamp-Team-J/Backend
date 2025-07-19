@@ -95,7 +95,6 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             db.rollback() # 다른 오류 발생 시 롤백
             print(f"Server error during user creation: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Server error during user creation: {str(e)}")
-
 @router.get("/{user_id}/dashboard", summary="유저 대시보드 조회", description="유저 대시보드를 조회합니다")
 def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
     try:

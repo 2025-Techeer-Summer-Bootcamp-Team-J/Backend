@@ -57,8 +57,8 @@ def delete_skintype(skin_type_id: int, db: Session = Depends(get_db)):
         return ResultResponseModel(status_code=400, message="피부유형 정보가 없습니다")
     response=delete_skintype_service(db, skin_type_id)
     return ResultResponseModel(status_code=200, message="피부유형 삭제 성공", data=response)
-
 @router.get("/diagnosis", summary="진단정보 테이블 조회", description="진단정보 테이블을 조회합니다")
 def get_diagnosis(db: Session = Depends(get_db)):
     response=get_diagnosis_table(db)
     return ResultResponseModel(status_code=200, message="진단 테이블 조회 성공", data=response)
+

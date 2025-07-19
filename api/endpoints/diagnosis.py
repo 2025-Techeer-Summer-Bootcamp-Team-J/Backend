@@ -247,7 +247,7 @@ async def create_diagnosis_sync(
             detail={"code": 500, "detail": f"진단 처리 중 오류가 발생했습니다: {str(e)}"}
         )
 
-@router.get("/users/{user_id}", response_model=UserDiagnosisBasicResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
+@router.get("/users/{user_id}/diagnoses", response_model=UserDiagnosisBasicResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     try:
         # user_id 유효성 검사 - 0보다 큰 양수여야 함
