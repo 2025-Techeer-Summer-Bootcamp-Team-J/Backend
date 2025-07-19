@@ -142,6 +142,8 @@ uv.lock
 # Rope project settings
 .ropeproject
 
+ngrok.*
+
 # mkdocs documentation
 /site
 
