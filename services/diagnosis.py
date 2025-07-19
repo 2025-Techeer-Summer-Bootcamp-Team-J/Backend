@@ -3,6 +3,7 @@ from models.diagnosis import Diagnosis
 from fastapi import HTTPException
 from models.diagnosis import Diagnosis as DiagnosisModel
 from schema.diagnosis import DiagnosisData
+from schema.detailed_disease_info import DetailedDiseaseInfoCreate
 
 
 import json
@@ -46,6 +47,7 @@ async def generate_and_save_detailed_disease_info(
         "management": {}
     }
 
+    current_management_key = None
     # Convert image bytes to base64 for storage
     image_base64 = base64.b64encode(image_bytes).decode('utf-8')
 
@@ -71,25 +73,16 @@ async def generate_and_save_detailed_disease_info(
                 elif event_type == "precautions_chunk":
                     if text_analysis_data["precautions"]:
                         text_analysis_data["precautions"][-1] += event_data + " "
-                current_management_key = None
-    async for event_str in generate_disease_info_stream_service(image_bytes, disease_name):
-        if event_str.startswith("data: "):
-            try:
-                event_json = json.loads(event_str[len("data: "):].strip())
-                event_type = event_json.get("type")
-                event_data = event_json.get("data")
-                if event_type == "management_item_start":
+                elif event_type == "management_item_start":
                     current_management_key = event_data
                     text_analysis_data["management"][current_management_key] = ""
                 elif event_type == "management_chunk":
                     if current_management_key in text_analysis_data["management"]:
                         text_analysis_data["management"][current_management_key] += event_data + " "
-
             except json.JSONDecodeError as e:
                 logger.error(f"Error decoding JSON from SSE event: {e} - {event_str}")
             except Exception as e:
                 logger.error(f"Error processing SSE event: {e} - {event_str}")
-
     # Clean up trailing spaces from collected text data
     text_analysis_data["ai_opinion"] = text_analysis_data["ai_opinion"].strip()
     text_analysis_data["detailed_description"] = text_analysis_data["detailed_description"].strip()
@@ -110,7 +103,6 @@ async def generate_and_save_detailed_disease_info(
         management=text_analysis_data.get("management"),
     )
 
-    from models.detailed_disease_info import DetailedDiseaseInfo
     detailed_info_data_dict = detailed_info_data.model_dump()
     detailed_info_data_dict['precautions'] = json.dumps(detailed_info_data_dict['precautions'], ensure_ascii=False)
     detailed_info_data_dict['management'] = json.dumps(detailed_info_data_dict['management'], ensure_ascii=False)
