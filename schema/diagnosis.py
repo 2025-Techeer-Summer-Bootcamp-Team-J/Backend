@@ -100,8 +100,8 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
             is_deleted=False
         )
 
-def diagnosis_to_simple_schema(diagnosis_obj) -> UserDiagnosisSimple:
-    """Diagnosis 모델 객체를 UserDiagnosisSimple 스키마로 변환"""
+def diagnosis_to_simple_schema(diagnosis_obj) -> SimplifiedDiagnosisData:
+    """Diagnosis 모델 객체를 SimplifiedDiagnosisData 스키마로 변환"""
     try:
         # disease_name 가져오기 - 첫 번째 연관된 질병의 이름을 사용
         disease_name = "알 수 없음"
@@ -113,20 +113,22 @@ def diagnosis_to_simple_schema(diagnosis_obj) -> UserDiagnosisSimple:
         if confidence is None:
             confidence = 0
             
-        return UserDiagnosisSimple(
-            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+        image_base64 = getattr(diagnosis_obj, 'image', None)
+        if image_base64 is None:
+            image_base64 = ""
+
+        return SimplifiedDiagnosisData(
             disease_name=disease_name,
-            confidence=float(confidence)
+            confidence=float(confidence),
+            image=image_base64
         )
     except Exception as e:
         print(f"간단한 진단 데이터 변환 중 오류 발생: {e}")
         # 최소한의 기본값으로라도 반환
-        return UserDiagnosisSimple(
-            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+        return SimplifiedDiagnosisData(
             disease_name="알 수 없음",
-            confidence=0.0
+            confidence=0.0,
+            image=""
         )
 
 def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[SimplifiedDiagnosisData]:
