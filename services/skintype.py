@@ -154,18 +154,15 @@ def create_skintype(db: Session, skintype: SkinTypeCreate):
     return SkinTypeRead.model_validate(new_skintype)
 
 def delete_skintype(db: Session, skin_type_id: int):
-    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skin_type_id).first()
+    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skin_type_id, SkinType.is_deleted == False).first()
     if not skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
 
     # 삭제 전에 Pydantic 스키마로 변환
     skintype_data = SkinTypeRead.model_validate(skintype)
 
-    db.query(Diagnosis).filter(Diagnosis.skin_type_id == skin_type_id).update({"skin_type_id": None})
-    
-    skintype.diseases.clear()
-
-    db.delete(skintype)
+    # Soft delete: is_deleted를 True로 설정
+    skintype.is_deleted = True
     db.commit()
     return skintype_data
 
@@ -183,7 +180,7 @@ def update_skintype(db: Session, skin_type_id: int, skintype_update: SkinTypeUpd
     return SkinTypeRead.model_validate(db_skintype)
 
 def get_type_description_by_id(db: Session, skintype_id: int):
-    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id).first()
+    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id, SkinType.is_deleted == False).first()
     if not skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
     return skintype.type_description

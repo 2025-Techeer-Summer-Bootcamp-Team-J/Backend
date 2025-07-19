@@ -66,10 +66,24 @@ class UserDiagnosisSimple(BaseModel):
     class Config:
         from_attributes = True
 
+# --- 사용자 진단 조회를 위한 기본 스키마 (질병명만) ---
+class UserDiagnosisBasic(BaseModel):
+    id: int
+    user_id: int
+    disease_name: str
+    
+    class Config:
+        from_attributes = True
+
 class UserDiagnosisResponse(BaseModel):
     code: int
     message: str
     data: List[UserDiagnosisSimple]
+
+class UserDiagnosisBasicResponse(BaseModel):
+    code: int
+    message: str
+    data: List[UserDiagnosisBasic]
 
 def box_to_schema(diagnosis_obj) -> DiagnosisData:
     """Diagnosis 모델 객체를 DiagnosisData 스키마로 변환"""
@@ -129,6 +143,43 @@ def diagnosis_to_simple_schema(diagnosis_obj) -> SimplifiedDiagnosisData:
             disease_name="알 수 없음",
             confidence=0.0,
             image=""
+        )
+
+def diagnosis_to_basic_schema(diagnosis_obj) -> UserDiagnosisBasic:
+    """Diagnosis 모델 객체를 UserDiagnosisBasic 스키마로 변환"""
+    try:
+        # disease_name 가져오기 - detailed_info_json에서 추출하거나 첫 번째 연관된 질병의 이름을 사용
+        disease_name = "알 수 없음"
+        
+        # 1. detailed_info_json에서 질병명 추출 시도
+        if hasattr(diagnosis_obj, 'detailed_info_json') and diagnosis_obj.detailed_info_json:
+            try:
+                import json
+                detail_info = json.loads(diagnosis_obj.detailed_info_json)
+                if isinstance(detail_info, dict):
+                    # image_analysis에서 disease_name 찾기
+                    image_analysis = detail_info.get('image_analysis', {})
+                    if isinstance(image_analysis, dict) and 'disease_name' in image_analysis:
+                        disease_name = image_analysis['disease_name']
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+        
+        # 2. 관계된 diseases 테이블에서 질병명 가져오기 (fallback)
+        if disease_name == "알 수 없음" and hasattr(diagnosis_obj, 'diseases') and diagnosis_obj.diseases and len(diagnosis_obj.diseases) > 0:
+            disease_name = diagnosis_obj.diseases[0].disease_name
+
+        return UserDiagnosisBasic(
+            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            disease_name=disease_name
+        )
+    except Exception as e:
+        print(f"기본 진단 데이터 변환 중 오류 발생: {e}")
+        # 최소한의 기본값으로라도 반환
+        return UserDiagnosisBasic(
+            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            disease_name="알 수 없음"
         )
 
 def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[SimplifiedDiagnosisData]:

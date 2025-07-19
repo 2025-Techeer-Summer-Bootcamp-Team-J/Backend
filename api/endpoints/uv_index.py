@@ -25,7 +25,7 @@ async def get_latest_uv_index(db: Session = Depends(get_db)):
     데이터베이스에 저장된 가장 최근의 자외선 지수 기록을 조회합니다.
     """
     try:
-        latest_uv_record = db.query(UVIndex).order_by(UVIndex.create_at.desc()).first()
+        latest_uv_record = db.query(UVIndex).filter(UVIndex.is_deleted == False).order_by(UVIndex.create_at.desc()).first()
 
         if not latest_uv_record:
             # 데이터가 없는 경우 404 대신 성공 응답에 빈 데이터 또는 메시지 포함

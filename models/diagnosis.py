@@ -31,6 +31,7 @@ class Diagnosis(Base):
     is_deleted = Column(Boolean, default=False)
 
     skinType_score = Column(Float, nullable=True) # 이 줄을 추가합니다. 
+    detailed_info_json = Column(Text, nullable=True) # 모든 상세 정보를 JSON 문자열로 저장
 
     # relationships - 문자열로 참조하여 순환참조 방지
     user = relationship("User", back_populates="diagnoses")
