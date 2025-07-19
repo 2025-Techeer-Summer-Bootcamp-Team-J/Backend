@@ -227,7 +227,6 @@ def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[Si
 # --- 진단 보조 정보 스키마 ---
 class AdditionalInfoRequest(BaseModel):
     """보조 정보 입력 요청 스키마"""
-    diagnosis_id: int
     main_symptoms: List[str] = []  # 주요 증상 (가려움, 따가움/동통, 붉은 반점, 각질/비듬, 진물/수포, 피부 간조, 부르지/이드름)
     itching_level: Optional[int] = None  # 가려움 정도 (1-9, 해당 시에만)
     symptom_duration: Optional[str] = None  # 언제부터 시작했나요 (오늘, 2-3일 전, 1주일 이상, 오래 전)

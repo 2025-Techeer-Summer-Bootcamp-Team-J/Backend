@@ -416,6 +416,7 @@ async def save_diagnosis_result(
              summary="진단 보조 정보 저장",
              description="진단의 보조 정보(주요 증상, 가려움 정도, 시작 시점, 보조 정보 텍스트)를 저장합니다")
 async def save_diagnosis_additional_info(
+    diagnosis_id: int,
     request: AdditionalInfoRequest,
     db: Session = Depends(get_db)
 ):
@@ -440,7 +441,7 @@ async def save_diagnosis_additional_info(
         
         # 먼저 해당 진단이 존재하는지 확인 (user_id는 요청에서 받거나 JWT에서 추출)
         diagnosis = db.query(Diagnosis).filter(
-            Diagnosis.diagnosis_id == request.diagnosis_id,
+            Diagnosis.diagnosis_id == diagnosis_id,
             Diagnosis.is_deleted == False
         ).first()
         
@@ -451,7 +452,7 @@ async def save_diagnosis_additional_info(
         updated_diagnosis = save_additional_info(
             db=db,
             user_id=diagnosis.user_id,  # 진단에서 user_id 가져오기
-            diagnosis_id=request.diagnosis_id,
+            diagnosis_id=diagnosis_id,
             main_symptoms=request.main_symptoms,
             itching_level=request.itching_level,
             symptom_duration=request.symptom_duration,
@@ -462,7 +463,7 @@ async def save_diagnosis_additional_info(
         additional_info_data = get_additional_info(
             db=db,
             user_id=diagnosis.user_id,
-            diagnosis_id=request.diagnosis_id
+            diagnosis_id=diagnosis_id
         )
         
         response_data = AdditionalInfoResponse(**additional_info_data)
