@@ -5,7 +5,6 @@ from schema.user import UserRead, UserCreate
 
 def create_user(user_data: UserCreate, db: Session) -> User:
     db_user = User(
-        clerk_id=user_data.clerk_id,
         email=user_data.email,
         password=user_data.password,
         name=user_data.name,
@@ -20,8 +19,8 @@ def create_user(user_data: UserCreate, db: Session) -> User:
     db.refresh(db_user)
     return db_user
 
-def get_user_by_clerk_id(clerk_id: str, db: Session) -> Optional[User]:
-    return db.query(User).filter(User.clerk_id == clerk_id).first()
+def get_user_by_email(email: str, db: Session) -> Optional[User]:
+    return db.query(User).filter(User.email == email).first()
 
 def get_user_table(db: Session):
     users = db.query(User).filter(User.is_deleted == False).all()

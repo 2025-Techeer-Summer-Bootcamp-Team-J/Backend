@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from schema.ResultResponseModel import ResultResponseModel
-from services.user import create_user, get_user_table, get_user_by_clerk_id
+from services.user import create_user, get_user_table, get_user_by_email
 from sqlalchemy.orm import Session
 from database.database import get_db
 from sqlalchemy.exc import IntegrityError
@@ -39,7 +39,6 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
         print(f"Clerk Event Type: {event_type}")
 
         mapped_data = {
-            "clerk_id": clerk_event_data.get('id'),
             "email": clerk_event_data.get('email_addresses', [{}])[0].get('email_address') if clerk_event_data.get('email_addresses') else None,
             "first_name": clerk_event_data.get('first_name'),
             "last_name": clerk_event_data.get('last_name'),
@@ -58,14 +57,14 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             print(f"Failed payload was: {raw_payload}")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid payload from Clerk: {str(e)}")
 
-    if not user_data.clerk_id:
-        print("Error: clerk_id is missing in webhook payload.")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="clerk_id is required")
+    if not user_data.email:
+        print("Error: email is missing in webhook payload.")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="email is required")
 
-    existing_user = get_user_by_clerk_id(user_data.clerk_id, db)
+    existing_user = get_user_by_email(user_data.email, db)
 
     if existing_user:
-        print(f"User with clerk_id {user_data.clerk_id} found. Attempting to update...")
+        print(f"User with email {user_data.email} found. Attempting to update...")
         try:
             update_fields = user_data.model_dump(exclude_unset=True) # Only include fields that were explicitly set
             for key, value in update_fields.items():
@@ -82,7 +81,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             print(f"Error updating user in DB: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Server error during user update: {str(e)}")
     else:
-        print(f"User with clerk_id {user_data.clerk_id} not found. Attempting to create new user...")
+        print(f"User with email {user_data.email} not found. Attempting to create new user...")
         try:
             new_user = create_user(user_data, db)
             # create_user already commits and refreshes
@@ -91,7 +90,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
         except IntegrityError as e:
             db.rollback() # Rollback in case of integrity error
             print(f"IntegrityError during user creation: {e}")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this email or clerk_id already exists.")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this email already exists.")
         except Exception as e:
             db.rollback() # Rollback in case of other errors
             print(f"Server error during user creation: {e}")
