@@ -70,6 +70,104 @@ def save_diagnosis_data(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"데이터베이스 저장 실패: {str(e)}")
 
+def save_additional_info(
+    db: Session, 
+    user_id: int, 
+    diagnosis_id: int, 
+    main_symptoms: list, 
+    itching_level: int = None,
+    symptom_duration: str = None, 
+    additional_notes: str = None
+) -> Diagnosis:
+    """
+    진단의 보조 정보를 저장합니다.
+    """
+    try:
+        # 해당 진단이 존재하고 사용자의 것인지 확인
+        diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_id == diagnosis_id,
+            Diagnosis.user_id == user_id,
+            Diagnosis.is_deleted == False
+        ).first()
+        
+        if not diagnosis:
+            raise HTTPException(status_code=404, detail="진단 정보가 없습니다")
+        
+        # 보조 정보를 JSON 형태로 구성
+        additional_info_data = {
+            "main_symptoms": main_symptoms,
+            "itching_level": itching_level,
+            "symptom_duration": symptom_duration,
+            "additional_notes": additional_notes
+        }
+        
+        # JSON 문자열로 저장
+        diagnosis.additional_info = json.dumps(additional_info_data, ensure_ascii=False)
+        
+        db.commit()
+        db.refresh(diagnosis)
+        
+        logger.info(f"보조 정보가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_id}")
+        return diagnosis
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"보조 정보 저장 중 오류: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"보조 정보 저장 실패: {str(e)}")
+
+def get_additional_info(db: Session, user_id: int, diagnosis_id: int) -> dict:
+    """
+    진단의 보조 정보를 조회합니다.
+    """
+    try:
+        # 해당 진단이 존재하고 사용자의 것인지 확인
+        diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_id == diagnosis_id,
+            Diagnosis.user_id == user_id,
+            Diagnosis.is_deleted == False
+        ).first()
+        
+        if not diagnosis:
+            raise HTTPException(status_code=404, detail="진단 정보가 없습니다")
+        
+        # additional_info가 없으면 빈 데이터 반환
+        if not diagnosis.additional_info:
+            return {
+                "diagnosis_id": diagnosis_id,
+                "user_id": user_id,
+                "main_symptoms": [],
+                "itching_level": None,
+                "symptom_duration": None,
+                "additional_notes": None,
+                "created_at": diagnosis.created_at,
+                "updated_at": diagnosis.updated_at
+            }
+        
+        # JSON 파싱
+        additional_info_data = json.loads(diagnosis.additional_info)
+        
+        return {
+            "diagnosis_id": diagnosis_id,
+            "user_id": user_id,
+            "main_symptoms": additional_info_data.get("main_symptoms", []),
+            "itching_level": additional_info_data.get("itching_level"),
+            "symptom_duration": additional_info_data.get("symptom_duration"),
+            "additional_notes": additional_info_data.get("additional_notes"),
+            "created_at": diagnosis.created_at,
+            "updated_at": diagnosis.updated_at
+        }
+        
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        logger.error(f"보조 정보 JSON 파싱 오류: diagnosis_id={diagnosis_id}")
+        raise HTTPException(status_code=500, detail="보조 정보 형식 오류")
+    except Exception as e:
+        logger.error(f"보조 정보 조회 중 오류: {e}")
+        raise HTTPException(status_code=500, detail=f"보조 정보 조회 실패: {str(e)}")
+
 async def generate_disease_info_stream_service(image_bytes: bytes, disease_name: str, user_id: int):
     """
     이미지와 질병명을 처리하여 질병 정보를 생성하고 SSE를 통해 스트리밍합니다.

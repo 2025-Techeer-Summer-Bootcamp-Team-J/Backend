@@ -223,5 +223,33 @@ def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[Si
     # 신뢰도 순으로 정렬 (높은 순)
     result.sort(key=lambda x: x.confidence, reverse=True)
     return result
+
+# --- 진단 보조 정보 스키마 ---
+class AdditionalInfoRequest(BaseModel):
+    """보조 정보 입력 요청 스키마"""
+    main_symptoms: List[str] = []  # 주요 증상 (가려움, 따가움/동통, 붉은 반점, 각질/비듬, 진물/수포, 피부 간조, 부르지/이드름)
+    itching_level: Optional[int] = None  # 가려움 정도 (1-9, 해당 시에만)
+    symptom_duration: Optional[str] = None  # 언제부터 시작했나요 (오늘, 2-3일 전, 1주일 이상, 오래 전)
+    additional_notes: Optional[str] = None  # 보조 정보 (텍스트)
+
+class AdditionalInfoResponse(BaseModel):
+    """보조 정보 조회 응답 스키마"""
+    diagnosis_id: int
+    user_id: int
+    main_symptoms: List[str]
+    itching_level: Optional[int]
+    symptom_duration: Optional[str]
+    additional_notes: Optional[str]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+class AdditionalInfoSuccessResponse(BaseModel):
+    """보조 정보 API 성공 응답"""
+    code: int
+    message: str
+    data: Optional[AdditionalInfoResponse] = None
     
 
