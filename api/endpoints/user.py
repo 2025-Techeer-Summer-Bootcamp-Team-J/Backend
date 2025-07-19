@@ -29,7 +29,7 @@ def signup(req: UserCreate, db: Session = Depends(get_db)):
 
 @router.post("/clerk-webhook", summary="Clerk Webhook", description="Clerk에서 유저 정보를 받아 처리합니다.")
 async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
-    raw_payload = None # Initialize raw_payload
+    raw_payload = None # raw_payload 초기화
     try:
         raw_payload = await request.json()
         print(f"Received RAW Clerk webhook payload: {raw_payload}")
@@ -66,7 +66,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
     if existing_user:
         print(f"User with email {user_data.email} found. Attempting to update...")
         try:
-            update_fields = user_data.model_dump(exclude_unset=True) # Only include fields that were explicitly set
+            update_fields = user_data.model_dump(exclude_unset=True) # 명시적으로 설정된 필드만 포함
             for key, value in update_fields.items():
                 if hasattr(existing_user, key) and value is not None:
                     setattr(existing_user, key, value)
@@ -77,7 +77,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             print(f"User updated successfully in DB: {existing_user.email} (ID: {existing_user.user_id})")
             return ResultResponseModel(status_code=200, message="User updated successfully", data=UserRead.model_validate(existing_user))
         except Exception as e:
-            db.rollback() # Rollback in case of error during update
+            db.rollback() # 업데이트 중 오류 발생 시 롤백
             print(f"Error updating user in DB: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Server error during user update: {str(e)}")
     else:
@@ -88,11 +88,11 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             print(f"New user created successfully in DB: {new_user.email} (ID: {new_user.user_id})")
             return ResultResponseModel(status_code=201, message="User created successfully", data=UserRead.model_validate(new_user))
         except IntegrityError as e:
-            db.rollback() # Rollback in case of integrity error
+            db.rollback() # 무결성 오류 발생 시 롤백
             print(f"IntegrityError during user creation: {e}")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User with this email already exists.")
         except Exception as e:
-            db.rollback() # Rollback in case of other errors
+            db.rollback() # 다른 오류 발생 시 롤백
             print(f"Server error during user creation: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Server error during user creation: {str(e)}")
 

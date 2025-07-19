@@ -9,9 +9,9 @@ class ImageAnalysisData(BaseModel):
 
 class TextAnalysisData(BaseModel):
     ai_opinion: Optional[str] = None
-    detailed_description: Optional[str] = None # This will be a combined string
+    detailed_description: Optional[str] = None # 이것은 결합된 문자열이 될 것입니다
     precautions: Optional[List[str]] = None
-    management: Optional[Dict[str, str]] = None # Assuming dict based on prompt
+    management: Optional[Dict[str, str]] = None # 프롬프트에 따라 dict로 가정
 
 class DetailedDiseaseInfoBase(BaseModel):
     disease_name: str

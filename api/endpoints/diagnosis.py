@@ -3,27 +3,18 @@ from sqlalchemy.orm import Session
 from config.celery import app
 from models.diagnosis import Diagnosis
 from database.database import get_db
-
-from schema.detailed_disease_info import DetailedDiseaseInfoRead, DetailedDiseaseInfoResponse
-import json # For json.loads
-
-from schema.Task import TaskStartResponse, TaskStatusResponse, TaskProgressInfo
-
+import json
+from schema.Task import TaskStartResponse, TaskStatusResponse
 import base64
 from tasks.diagnosis import process_diagnosis_task
-
-from PIL import Image  # ← Image import 추가
-from schema.diagnosis import DiagnosisResponse, box_to_schema, BoundingBox, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, SimplifiedDiagnosisData, DiagnosisData, UserDiagnosisResponse, diagnosis_to_simple_schema
-import io  # ← io import 추가
-from typing import List
+from schema.diagnosis import DiagnosisResponse, box_to_schema, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, UserDiagnosisResponse, diagnosis_to_simple_schema, UserDiagnosisBasicResponse, diagnosis_to_basic_schema
 from inference_sdk import InferenceHTTPClient
 import tempfile
-import shutil
 import os
-from services.diagnosis import delete_diagnosis, generate_and_save_detailed_disease_info
-from schema.ResultResponseModel import ResultResponseModel
-
-
+from services.diagnosis import delete_diagnosis, save_diagnosis_data
+from fastapi.responses import StreamingResponse
+from services.diagnosis import generate_disease_info_stream_service
+from schema.diagnosis_save import SaveDiagnosisRequest, SaveDiagnosisResponse, SavedDiagnosisResponse
 
 router = APIRouter(
     prefix="/diagnoses",
@@ -256,7 +247,7 @@ async def create_diagnosis_sync(
             detail={"code": 500, "detail": f"진단 처리 중 오류가 발생했습니다: {str(e)}"}
         )
 
-@router.get("/users/{user_id}", response_model=UserDiagnosisResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
+@router.get("/users/{user_id}", response_model=UserDiagnosisBasicResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
 def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
     try:
         # user_id 유효성 검사 - 0보다 큰 양수여야 함
@@ -271,7 +262,7 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
 
         # 진단 데이터가 없는 경우 빈 배열로 응답 (404 대신 200으로 처리)
         if not diagnoses:
-            return UserDiagnosisResponse(
+            return UserDiagnosisBasicResponse(
                 code=200,
                 message="해당 사용자의 진단 데이터가 없습니다",
                 data=[]
@@ -281,12 +272,12 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
         diagnosis_data = []
         for d in diagnoses:
             try:
-                diagnosis_data.append(diagnosis_to_simple_schema(d))
+                diagnosis_data.append(diagnosis_to_basic_schema(d))
             except Exception as e:
                 print(f"진단 데이터 변환 중 오류 발생 (ID: {getattr(d, 'id', 'Unknown')}): {e}")
                 continue
 
-        return UserDiagnosisResponse(
+        return UserDiagnosisBasicResponse(
             code=200,
             message="특정 사용자의 모든 진단 조회 성공",
             data=diagnosis_data
@@ -315,12 +306,12 @@ def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends
         data=[deleted_data_schema]
     )
 
-@router.get("/{diagnosis_id}", response_model=SimplifiedDiagnosisResponse, summary="진단 세부 정보 조회", description="진단 ID를 통해 진단 세부 정보를 조회합니다.")
+@router.get("/{diagnosis_id}", response_model=SavedDiagnosisResponse, summary="진단 세부 정보 조회", description="진단 ID를 통해 저장된 원본 진단 데이터를 조회합니다.")
 def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
     """
-    진단 ID를 통해 진단 세부 정보를 조회합니다.
+    진단 ID를 통해 저장된 원본 진단 데이터를 조회합니다.
     """
-    diagnosis = db.query(Diagnosis).filter(Diagnosis.diagnosis_id == diagnosis_id).first()
+    diagnosis = db.query(Diagnosis).filter(Diagnosis.diagnosis_id == diagnosis_id, Diagnosis.is_deleted == False).first()
 
     if not diagnosis:
         raise HTTPException(
@@ -328,13 +319,26 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
             detail={"code": 404, "message": "진단 정보를 찾을 수 없습니다."}
         )
 
-    # SimplifiedDiagnosisResponse 스키마에 맞게 데이터 변환
+    # 저장된 원본 데이터를 그대로 반환
     try:
-        simplified_data = diagnosis_to_simple_schema(diagnosis)
-        return SimplifiedDiagnosisResponse(
+        # detailed_info_json에서 원본 데이터 파싱
+        detailed_info = {}
+        if diagnosis.detailed_info_json:
+            detailed_info = json.loads(diagnosis.detailed_info_json)
+        
+        # 저장된 데이터와 동일한 구조로 반환
+        saved_data = {
+            "diagnosis_id": diagnosis.diagnosis_id,
+            "user_id": diagnosis.user_id,
+            "image_base64": diagnosis.image or "",
+            "image_analysis": detailed_info.get("image_analysis", {}),
+            "text_analysis": detailed_info.get("text_analysis", {})
+        }
+        
+        return SavedDiagnosisResponse(
             code=200,
             message="진단 세부 정보 조회 성공",
-            data=simplified_data
+            data=saved_data
         )
     except Exception as e:
         raise HTTPException(
@@ -342,47 +346,66 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
             detail={"code": 500, "message": f"진단 데이터 변환 중 오류가 발생했습니다: {str(e)}"}
         )
 
-@router.post("/generate-and-save", summary="진단 정보 생성 및 저장", description="사진과 질병명을 받아 상세 진단 정보를 생성하고 DB에 저장합니다.")
-async def generate_and_save_detailed_disease_info_endpoint(
+# <<< 질병 정보 스트리밍 생성 API >>>
+@router.post("/generate-stream", summary="질병 정보 스트리밍 생성", description="사진과 질병명을 받아 SSE로 상세 정보를 스트리밍합니다. 스트리밍이 완료되면 자동으로 데이터베이스에 저장됩니다.")
+async def generate_disease_info_stream(
+    user_id: int = Form(...),
     disease_name: str = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_db)
 ):
     try:
         image_bytes = await image.read()
-        record_id = await generate_and_save_detailed_disease_info(db, image_bytes, disease_name)
-        return ResultResponseModel(
-            status_code=200,
-            message="질병 정보 생성 및 저장 성공",
-            data={"id": record_id}
+        
+        # SSE를 위한 적절한 헤더 설정
+        headers = {
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "Cache-Control",
+            "X-Accel-Buffering": "no"  # nginx 버퍼링 비활성화
+        }
+        
+        return StreamingResponse(
+            generate_disease_info_stream_service(image_bytes, disease_name, user_id), 
+            media_type="text/event-stream",
+            headers=headers
         )
     except Exception as e:
-        print(f"Error in generate_and_save_detailed_disease_info_endpoint: {e}")
-        raise HTTPException(status_code=500, detail=f"질병 정보 생성 및 저장 실패: {e}")
+        # 디버깅을 위해 예외 기록
+        print(f"Error in generate_disease_info_stream: {e}")
+        raise HTTPException(status_code=500, detail=f"스트리밍 생성 실패: {e}")
 
-@router.get("/detailed/{diagnosis_id}", response_model=DetailedDiseaseInfoResponse, summary="저장된 질병 상세 정보 조회", description="저장된 질병 상세 정보를 ID로 조회합니다.")
-def get_detailed_disease_info_by_id(
-    diagnosis_id: int,
+
+@router.post("/save",
+             response_model=SaveDiagnosisResponse,
+             summary="진단 결과 저장",
+             description="스트리밍 완료 후 진단 결과 데이터를 데이터베이스에 저장합니다")
+async def save_diagnosis_result(
+    request: SaveDiagnosisRequest,
     db: Session = Depends(get_db)
 ):
+    """
+    스트리밍 완료 후 진단 결과 데이터를 저장합니다.
+    """
     try:
-        detailed_info = db.query(DetailedDiseaseInfo).filter(DetailedDiseaseInfo.id == diagnosis_id).first()
-        if not detailed_info:
-            raise HTTPException(status_code=404, detail={"code": 404, "message": "상세 질병 정보를 찾을 수 없습니다."})
-        
-        # Convert JSON strings back to Python objects for Pydantic model
-        if detailed_info.precautions:
-            detailed_info.precautions = json.loads(detailed_info.precautions)
-        if detailed_info.management:
-            detailed_info.management = json.loads(detailed_info.management)
-
-        return DetailedDiseaseInfoResponse(
-            code=200,
-            message="상세 질병 정보 조회 성공",
-            data=DetailedDiseaseInfoRead.model_validate(detailed_info)
+        diagnosis = save_diagnosis_data(
+            db=db,
+            user_id=request.user_id,
+            image_base64=request.image_base64,
+            image_analysis_data=request.image_analysis,
+            text_analysis_data=request.text_analysis
         )
+        
+        return SaveDiagnosisResponse(
+            diagnosis_id=diagnosis.diagnosis_id,
+            message="진단 결과가 성공적으로 저장되었습니다."
+        )
+        
     except HTTPException as e:
         raise e
     except Exception as e:
-        print(f"Error in get_detailed_disease_info_by_id: {e}")
-        raise HTTPException(status_code=500, detail=f"상세 질병 정보 조회 실패: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"진단 결과 저장 중 오류가 발생했습니다: {str(e)}"
+        )

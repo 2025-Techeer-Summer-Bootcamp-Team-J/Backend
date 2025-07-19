@@ -1,7 +1,7 @@
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
-# --- Schemas for Database CRUD Operations ---
+# --- 데이터베이스 CRUD 작업을 위한 스키마 ---
 
 class DiseaseBase(BaseModel):
     main_symptom: Optional[str] = None
@@ -22,7 +22,7 @@ class DiseaseRead(DiseaseBase):
 class DiseaseDelete(BaseModel):
     disease_id: int
 
-# --- Schemas for Gemini API Response ---
+# --- Gemini API 응답을 위한 스키마 ---
 
 class DiseaseSummary(BaseModel):
     suspected_disease: str
