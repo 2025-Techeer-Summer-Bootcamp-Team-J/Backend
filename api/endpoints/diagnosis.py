@@ -7,11 +7,11 @@ import json
 from schema.Task import TaskStartResponse, TaskStatusResponse
 import base64
 from tasks.diagnosis import process_diagnosis_task
-from schema.diagnosis import DiagnosisResponse, box_to_schema, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, UserDiagnosisResponse, diagnosis_to_simple_schema, UserDiagnosisBasicResponse, diagnosis_to_basic_schema
+from schema.diagnosis import DiagnosisResponse, box_to_schema, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, UserDiagnosisResponse, diagnosis_to_simple_schema, UserDiagnosisBasicResponse, diagnosis_to_basic_schema, AdditionalInfoRequest, AdditionalInfoResponse, AdditionalInfoSuccessResponse
 from inference_sdk import InferenceHTTPClient
 import tempfile
 import os
-from services.diagnosis import delete_diagnosis, save_diagnosis_data
+from services.diagnosis import delete_diagnosis, save_diagnosis_data, save_additional_info, get_additional_info
 from fastapi.responses import StreamingResponse
 from services.diagnosis import generate_disease_info_stream_service
 from schema.diagnosis_save import SaveDiagnosisRequest, SaveDiagnosisResponse, SavedDiagnosisResponse
@@ -408,4 +408,112 @@ async def save_diagnosis_result(
         raise HTTPException(
             status_code=500,
             detail=f"진단 결과 저장 중 오류가 발생했습니다: {str(e)}"
+        )
+
+# <<< 진단 보조 정보 저장 API >>>
+@router.post("/{diagnosis_id}/additional",
+             response_model=AdditionalInfoSuccessResponse,
+             summary="진단 보조 정보 저장",
+             description="진단의 보조 정보(주요 증상, 가려움 정도, 시작 시점, 보조 정보 텍스트)를 저장합니다")
+async def save_diagnosis_additional_info(
+    request: AdditionalInfoRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    진단의 보조 정보를 저장합니다.
+    """
+    try:
+        # 가려움 정도 유효성 검사
+        if request.itching_level is not None and (request.itching_level < 1 or request.itching_level > 9):
+            raise HTTPException(status_code=400, detail="가려움 정도는 1-9 사이의 값이어야 합니다")
+        
+        # 증상 지속 기간 유효성 검사
+        valid_durations = ["오늘", "2-3일 전", "1주일 이상", "오래 전"]
+        if request.symptom_duration and request.symptom_duration not in valid_durations:
+            raise HTTPException(status_code=400, detail="올바른 증상 지속 기간을 선택해주세요")
+        
+        # 주요 증상 유효성 검사
+        valid_symptoms = ["가려움", "따가움/동통", "붉은 반점", "각질/비듬", "진물/수포", "피부 간조", "부르지/이드름"]
+        for symptom in request.main_symptoms:
+            if symptom not in valid_symptoms:
+                raise HTTPException(status_code=400, detail=f"올바르지 않은 증상입니다: {symptom}")
+        
+        # 먼저 해당 진단이 존재하는지 확인 (user_id는 요청에서 받거나 JWT에서 추출)
+        diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_id == request.diagnosis_id,
+            Diagnosis.is_deleted == False
+        ).first()
+        
+        if not diagnosis:
+            raise HTTPException(status_code=404, detail="진단 정보를 찾을 수 없습니다")
+        
+        # 보조 정보 저장
+        updated_diagnosis = save_additional_info(
+            db=db,
+            user_id=diagnosis.user_id,  # 진단에서 user_id 가져오기
+            diagnosis_id=request.diagnosis_id,
+            main_symptoms=request.main_symptoms,
+            itching_level=request.itching_level,
+            symptom_duration=request.symptom_duration,
+            additional_notes=request.additional_notes
+        )
+        
+        # 저장된 정보 조회해서 응답 구성
+        additional_info_data = get_additional_info(
+            db=db,
+            user_id=diagnosis.user_id,
+            diagnosis_id=request.diagnosis_id
+        )
+        
+        response_data = AdditionalInfoResponse(**additional_info_data)
+        
+        return AdditionalInfoSuccessResponse(
+            code=200,
+            message="보조 정보가 성공적으로 저장되었습니다",
+            data=response_data
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"보조 정보 저장 중 오류가 발생했습니다: {str(e)}"
+        )
+
+# <<< 진단 보조 정보 조회 API >>>
+@router.get("/{diagnosis_id}/additional",
+            response_model=AdditionalInfoSuccessResponse,
+            summary="진단 보조 정보 조회",
+            description="특정 진단의 보조 정보를 조회합니다")
+async def get_diagnosis_additional_info(
+    diagnosis_id: int,
+    user_id: int,  # Query parameter로 받거나 JWT에서 추출
+    db: Session = Depends(get_db)
+):
+    """
+    특정 진단의 보조 정보를 조회합니다.
+    """
+    try:
+        # 보조 정보 조회
+        additional_info_data = get_additional_info(
+            db=db,
+            user_id=user_id,
+            diagnosis_id=diagnosis_id
+        )
+        
+        response_data = AdditionalInfoResponse(**additional_info_data)
+        
+        return AdditionalInfoSuccessResponse(
+            code=200,
+            message="보조 정보 조회 성공",
+            data=response_data
+        )
+        
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"보조 정보 조회 중 오류가 발생했습니다: {str(e)}"
         )
