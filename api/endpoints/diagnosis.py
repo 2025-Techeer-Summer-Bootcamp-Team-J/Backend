@@ -347,7 +347,7 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
         )
 
 # <<< 질병 정보 스트리밍 생성 API >>>
-@router.get("/generate-stream", summary="질병 정보 스트리밍 생성", description="사진과 질병명을 받아 SSE로 상세 정보를 스트리밍합니다. 스트리밍이 완료되면 자동으로 데이터베이스에 저장됩니다.")
+@router.post("/generate-stream", summary="질병 정보 스트리밍 생성", description="사진과 질병명을 받아 SSE로 상세 정보를 스트리밍합니다. 스트리밍이 완료되면 자동으로 데이터베이스에 저장됩니다.")
 async def generate_disease_info_stream(
     user_id: int = Form(...),
     disease_name: str = Form(...),
