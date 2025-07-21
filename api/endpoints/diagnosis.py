@@ -100,19 +100,18 @@ def get_task_status(task_id: str):
                 error=None
             )
         elif state == 'SUCCESS':
-            # 태스크 성공 시 결과를 SimplifiedDiagnosisResponse로 변환
+            # 태스크 성공 시 결과를 그대로 반환
             try:
                 result_data = task.result
                 if result_data and isinstance(result_data, dict):
-                    # dict 형태의 결과를 SimplifiedDiagnosisResponse로 변환
-                    diagnosis_result = SimplifiedDiagnosisResponse(**result_data)
+                    # 태스크에서 이미 SimplifiedDiagnosisResponse 형태로 반환하므로 그대로 사용
                     return TaskStatusResponse(
                         code=200,
                         message="태스크가 성공적으로 완료되었습니다",
                         task_id=task_id,
                         state=state,
                         progress=None,
-                        result=diagnosis_result,
+                        result=result_data,  # dict 형태 그대로 전달
                         error=None
                     )
                 else:
