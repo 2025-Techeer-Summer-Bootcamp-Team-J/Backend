@@ -53,11 +53,14 @@ def process_diagnosis_task(user_id: int, image_base64: str):
         # 간소화된 응답 생성
         simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
         
+        # Pydantic 모델을 딕셔너리로 변환하여 JSON 직렬화 가능하게 만듦
+        simplified_data_dict = [data.model_dump() for data in simplified_data]
+        
         # SimplifiedDiagnosisResponse 형태로 반환
         return {
             "code": 200,
             "message": "진단정보 생성 성공",
-            "data": simplified_data  # 이미 SimplifiedDiagnosisData 리스트 형태
+            "data": simplified_data_dict
         }
             
     except Exception as e:
