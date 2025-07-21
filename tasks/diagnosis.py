@@ -53,10 +53,11 @@ def process_diagnosis_task(user_id: int, image_base64: str):
         # 간소화된 응답 생성
         simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
         
+        # SimplifiedDiagnosisResponse 형태로 반환
         return {
             "code": 200,
             "message": "진단정보 생성 성공",
-            "data": [data.dict() for data in simplified_data]
+            "data": simplified_data  # 이미 SimplifiedDiagnosisData 리스트 형태
         }
             
     except Exception as e:
