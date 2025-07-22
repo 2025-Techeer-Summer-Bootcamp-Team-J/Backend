@@ -93,7 +93,7 @@ services:
   # Redis 캐시
   redis:
     image: redis:latest
-    container_name: backend-redis
+    container_name: redis
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
@@ -142,6 +142,19 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+
+  celery-beat:
+    build: .
+    container_name: celery-beat
+    command: celery -A config.celery beat --loglevel=info
+    volumes:
+      - .:/app
+    networks:
+      - backend-network
+    depends_on:
+      - rabbitmq
+      - redis
+    restart: unless-stopped
 
 
 ## 프로메테우스 메트릭 수집

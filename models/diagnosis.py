@@ -20,7 +20,7 @@ class Diagnosis(Base):
     diagnosis_id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("USER.user_id"), nullable=False)
     skin_type_id = Column(Integer, ForeignKey("SKINTYPE.skin_type_id"), nullable=True)
-    
+
     
     # 기존 컬럼들
     confidence = Column(Integer, nullable=True)
@@ -28,7 +28,12 @@ class Diagnosis(Base):
     after = Column(Text, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-    is_deleted = Column(Boolean, default=False) 
+    is_deleted = Column(Boolean, default=False)
+
+    skinType_score = Column(Float, nullable=True) # 이 줄을 추가합니다. 
+    detailed_info_json = Column(Text, nullable=True) # 모든 상세 정보를 JSON 문자열로 저장
+    additional_info = Column(Text, nullable=True) # 보조 정보를 JSON 문자열로 저장 (주요 증상, 가려움 정도, 시작 시점, 보조 정보 텍스트)
+    disease_name = Column(String(255), nullable=True) # 질병명 저장
 
     # relationships - 문자열로 참조하여 순환참조 방지
     user = relationship("User", back_populates="diagnoses")
@@ -40,5 +45,3 @@ class Diagnosis(Base):
     @property
     def id(self):
         return self.diagnosis_id
-
-

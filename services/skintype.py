@@ -53,11 +53,17 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
         }
         
         with create_session_with_retry() as session:
-            response = session.post(url, headers=headers, files=files, timeout=(10, 60))
+            # files 딕셔너리의 value를 (filename, fileobj, content_type)에서 (filename, fileobj, content_type)로 전달하면
+            # requests의 타입 검사에서 오류가 발생할 수 있으므로, content_type을 생략하거나 명시적으로 typing을 맞춰줍니다.
+            # requests는 (filename, fileobj) 또는 (filename, fileobj, content_type) 튜플을 허용합니다.
+            # 하지만 mypy 등에서 경고가 발생할 수 있으므로, 아래와 같이 content_type을 명시적으로 str로 지정합니다.
+            files_for_requests = {
+                'image': (image_file.filename or 'image.jpg', io.BytesIO(image_data), image_file.content_type or 'application/octet-stream')
+            }
+            response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60))
             
             if response.status_code != 200:
                 raise HTTPException(status_code=response.status_code, detail="AILab API 호출 실패")
-            
             return response.json()
         
     except requests.exceptions.Timeout:
@@ -148,18 +154,15 @@ def create_skintype(db: Session, skintype: SkinTypeCreate):
     return SkinTypeRead.model_validate(new_skintype)
 
 def delete_skintype(db: Session, skin_type_id: int):
-    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skin_type_id).first()
+    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skin_type_id, SkinType.is_deleted == False).first()
     if not skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
 
     # 삭제 전에 Pydantic 스키마로 변환
     skintype_data = SkinTypeRead.model_validate(skintype)
 
-    db.query(Diagnosis).filter(Diagnosis.skin_type_id == skin_type_id).update({"skin_type_id": None})
-    
-    skintype.diseases.clear()
-
-    db.delete(skintype)
+    # Soft delete: is_deleted를 True로 설정
+    skintype.is_deleted = True
     db.commit()
     return skintype_data
 
@@ -177,7 +180,7 @@ def update_skintype(db: Session, skin_type_id: int, skintype_update: SkinTypeUpd
     return SkinTypeRead.model_validate(db_skintype)
 
 def get_type_description_by_id(db: Session, skintype_id: int):
-    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id).first()
+    skintype = db.query(SkinType).filter(SkinType.skin_type_id == skintype_id, SkinType.is_deleted == False).first()
     if not skintype:
         raise HTTPException(status_code=404, detail="피부유형 정보가 없습니다")
     return skintype.type_description
