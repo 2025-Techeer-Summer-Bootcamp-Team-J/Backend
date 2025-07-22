@@ -1,6 +1,11 @@
 from pydantic import BaseModel
+
 from typing import Dict, Any
 from fastapi import File, UploadFile
+
+from typing import Dict, Any, List, Optional
+from .diseases import DiseaseRead
+
 
 class SaveDiagnosisRequest(BaseModel):
     user_id: int
@@ -18,6 +23,8 @@ class SavedDiagnosisData(BaseModel):
     image: Dict[str, Any]
     image_analysis: Dict[str, Any]
     text_analysis: Dict[str, Any]
+    disease_name: Optional[str] = None  # 질병명 필드 추가
+    diseases: List[DiseaseRead] = []  # 연관된 질병 정보 추가
 
 class SavedDiagnosisResponse(BaseModel):
     code: int

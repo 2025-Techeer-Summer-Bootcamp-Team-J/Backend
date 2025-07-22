@@ -101,19 +101,18 @@ def get_task_status(task_id: str):
                 error=None
             )
         elif state == 'SUCCESS':
-            # 태스크 성공 시 결과를 SimplifiedDiagnosisResponse로 변환
+            # 태스크 성공 시 결과를 그대로 반환
             try:
                 result_data = task.result
                 if result_data and isinstance(result_data, dict):
-                    # dict 형태의 결과를 SimplifiedDiagnosisResponse로 변환
-                    diagnosis_result = SimplifiedDiagnosisResponse(**result_data)
+                    # 태스크에서 이미 SimplifiedDiagnosisResponse 형태로 반환하므로 그대로 사용
                     return TaskStatusResponse(
                         code=200,
                         message="태스크가 성공적으로 완료되었습니다",
                         task_id=task_id,
                         state=state,
                         progress=None,
-                        result=diagnosis_result,
+                        result=result_data,  # dict 형태 그대로 전달
                         error=None
                     )
                 else:
@@ -307,10 +306,10 @@ def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends
         data=[deleted_data_schema]
     )
 
-@router.get("/{diagnosis_id}", response_model=SavedDiagnosisResponse, summary="진단 세부 정보 조회", description="진단 ID를 통해 저장된 원본 진단 데이터를 조회합니다.")
+@router.get("/{diagnosis_id}", response_model=SavedDiagnosisResponse, summary="진단 세부 정보 조회", description="진단 ID를 통해 저장된 원본 진단 데이터와 연관된 질병 정보를 조회합니다.")
 def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
     """
-    진단 ID를 통해 저장된 원본 진단 데이터를 조회합니다.
+    진단 ID를 통해 저장된 원본 진단 데이터와 연관된 질병 정보를 조회합니다.
     """
     diagnosis = db.query(Diagnosis).filter(Diagnosis.diagnosis_id == diagnosis_id, Diagnosis.is_deleted == False).first()
 
@@ -327,18 +326,31 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
         if diagnosis.detailed_info_json:
             detailed_info = json.loads(diagnosis.detailed_info_json)
         
-        # 저장된 데이터와 동일한 구조로 반환
+        # 연관된 질병 정보 조회
+        diseases_data = [
+            {
+                "disease_id": disease.disease_id,
+                "main_symptom": disease.main_symptom,
+                "disease_name": disease.disease_name,
+                "description": disease.description,
+                "precautions": disease.precautions
+            }
+            for disease in diagnosis.diseases if not disease.is_deleted
+        ]
+        
+        # 저장된 데이터와 동일한 구조로 반환 + 질병 정보 추가
         saved_data = {
             "diagnosis_id": diagnosis.diagnosis_id,
             "user_id": diagnosis.user_id,
             "image_base64": diagnosis.image or "",
             "image_analysis": detailed_info.get("image_analysis", {}),
-            "text_analysis": detailed_info.get("text_analysis", {})
+            "text_analysis": detailed_info.get("text_analysis", {}),
+            "diseases": diseases_data
         }
         
         return SavedDiagnosisResponse(
             code=200,
-            message="진단 세부 정보 조회 성공",
+            message="진단 세부 정보 및 질병 정보 조회 성공",
             data=saved_data
         )
     except Exception as e:

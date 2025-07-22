@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +46,15 @@ def save_diagnosis_data(
     진단 결과 데이터를 데이터베이스에 저장합니다.
     """
     try:
+        # text_analysis_data에서 disease_name 추출
+        disease_name = text_analysis_data.get("disease_name", "")
+
         full_detailed_info = {
             "image_analysis": image_analysis_data,
             "text_analysis": text_analysis_data
         }
         
+
         diagnosis_data = Diagnosis(
             user_id=user_id,
             image=image,
@@ -64,6 +68,8 @@ def save_diagnosis_data(
         
         logger.info(f"진단 데이터가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_data.diagnosis_id}")
         return diagnosis_data
+
+      
         
     except Exception as e:
         logger.error(f"데이터베이스 저장 중 오류: {e}")
