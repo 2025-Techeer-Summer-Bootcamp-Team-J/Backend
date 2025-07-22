@@ -4,6 +4,7 @@ from database.database import get_db
 from models.uv_index import UVIndex
 from services.uv_index import fetch_korea_uv_range
 from datetime import datetime
+import pytz
 import re
 import logging
 import asyncio
@@ -25,10 +26,11 @@ def update_uv_index_task():
             uv_index_value = int(match.group(0))
 
         parsed_date = datetime.strptime(uv_response.date, "%Y년 %m월 %d일 %H시")
+        seoul_tz = pytz.timezone('Asia/Seoul')
         new_uv_record = UVIndex(
             date=parsed_date.date(),
             uv_Index=uv_index_value,
-            create_at=datetime.now()
+            create_at=datetime.now(seoul_tz)
         )
         db.add(new_uv_record)
         db.commit()
