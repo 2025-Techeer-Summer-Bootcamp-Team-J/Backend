@@ -41,11 +41,14 @@ services:
   backend:
     build: .
     container_name: fastapi
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     volumes:
       - .:/app
       - /app/__pycache__
+      - ./credentials/summerbootcamp-d4f6ec4850e7.json:/app/credentials/summerbootcamp-d4f6ec4850e7.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/summerbootcamp-d4f6ec4850e7.json
     env_file:
       - .env
     restart: unless-stopped
@@ -93,7 +96,7 @@ services:
   # Redis 캐시
   redis:
     image: redis:latest
-    container_name: redis
+    container_name: backend-redis
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
@@ -128,9 +131,13 @@ services:
   celery:
     build: .
     container_name: celery
-    command: celery -A config.celery worker --loglevel=info
+    command: celery -A config.celery.app worker --loglevel=info
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/summerbootcamp-d4f6ec4850e7.json
     volumes:
       - .:/app
+      - /app/__pycache__
+      - ./credentials/summerbootcamp-d4f6ec4850e7.json:/app/credentials/summerbootcamp-d4f6ec4850e7.json
     networks:
       - backend-network
     depends_on:
@@ -143,21 +150,8 @@ services:
       retries: 5
       start_period: 10s
 
-  celery-beat:
-    build: .
-    container_name: celery-beat
-    command: celery -A config.celery beat --loglevel=info
-    volumes:
-      - .:/app
-    networks:
-      - backend-network
-    depends_on:
-      - rabbitmq
-      - redis
-    restart: unless-stopped
 
-
-## 프로메테우스 메트릭 수집
+# # 프로메테우스 메트릭 수집
 
 #   prometheus:
 #     image: prom/prometheus:latest

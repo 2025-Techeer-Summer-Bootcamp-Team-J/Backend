@@ -184,4 +184,8 @@ pyrightconfig.json
 
 .idea/
 
+
+credentials/*.json
+
 celerybeat-schedule
+

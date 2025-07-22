@@ -14,7 +14,8 @@ import os
 from services.diagnosis import delete_diagnosis, save_diagnosis_data, save_additional_info, get_additional_info
 from fastapi.responses import StreamingResponse
 from services.diagnosis import generate_disease_info_stream_service
-from schema.diagnosis_save import SaveDiagnosisRequest, SaveDiagnosisResponse, SavedDiagnosisResponse
+from schema.diagnosis_save import SaveDiagnosisResponse, SavedDiagnosisResponse
+from crud.storage import upload_image
 
 router = APIRouter(
     prefix="/diagnoses",
@@ -394,28 +395,33 @@ async def generate_disease_info_stream(
              summary="진단 결과 저장",
              description="스트리밍 완료 후 진단 결과 데이터를 데이터베이스에 저장합니다")
 async def save_diagnosis_result(
-    request: SaveDiagnosisRequest,
+    user_id: int,
+    image: UploadFile = File(...),
+    image_analysis: str = Form(...),
+    text_analysis: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """
     스트리밍 완료 후 진단 결과 데이터를 저장합니다.
     """
     try:
+        image_analysis_dict = json.loads(image_analysis)
+        text_analysis_dict = json.loads(text_analysis)
+        image_file = image
+        image_url = await upload_image(image_file)
+        
         diagnosis = save_diagnosis_data(
             db=db,
-            user_id=request.user_id,
-            image_base64=request.image_base64,
-            image_analysis_data=request.image_analysis,
-            text_analysis_data=request.text_analysis
+            user_id=user_id,
+            image=image_url,
+            image_analysis_data=image_analysis_dict,
+            text_analysis_data=text_analysis_dict
         )
         
         return SaveDiagnosisResponse(
             diagnosis_id=diagnosis.diagnosis_id,
             message="진단 결과가 성공적으로 저장되었습니다."
         )
-        
-    except HTTPException as e:
-        raise e
     except Exception as e:
         raise HTTPException(
             status_code=500,

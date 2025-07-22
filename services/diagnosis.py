@@ -38,7 +38,7 @@ def get_diagnosis_table(db: Session):
 def save_diagnosis_data(
     db: Session, 
     user_id: int, 
-    image_base64: str, 
+    image: str, 
     image_analysis_data: dict, 
     text_analysis_data: dict
 ) -> Diagnosis:
@@ -54,41 +54,22 @@ def save_diagnosis_data(
             "text_analysis": text_analysis_data
         }
         
-        # 같은 user_id와 disease_name으로 기존 진단이 있는지 확인
-        existing_diagnosis = db.query(Diagnosis).filter(
-            Diagnosis.user_id == user_id,
-            Diagnosis.disease_name == disease_name,
-            Diagnosis.is_deleted == False
-        ).first()
 
-        if existing_diagnosis:
-            # 기존 진단이 있으면 업데이트
-            existing_diagnosis.image = image_base64
-            existing_diagnosis.confidence = image_analysis_data.get("skin_score", 0)
-            existing_diagnosis.detailed_info_json = json.dumps(full_detailed_info, ensure_ascii=False)
-            existing_diagnosis.updated_at = db.execute("SELECT NOW()").scalar()
+        diagnosis_data = Diagnosis(
+            user_id=user_id,
+            image=image,
+            skinType_score=image_analysis_data.get("skin_score", 0),
+            detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False)
+        )
+        
+        db.add(diagnosis_data)
+        db.commit()
+        db.refresh(diagnosis_data)
+        
+        logger.info(f"진단 데이터가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_data.diagnosis_id}")
+        return diagnosis_data
 
-            db.commit()
-            db.refresh(existing_diagnosis)
-
-            logger.info(f"기존 진단 데이터가 업데이트되었습니다. Diagnosis ID: {existing_diagnosis.diagnosis_id}")
-            return existing_diagnosis
-        else:
-            # 새로운 진단 생성
-            diagnosis_data = Diagnosis(
-                user_id=user_id,
-                image=image_base64,
-                confidence=image_analysis_data.get("skin_score", 0),
-                detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False),
-                disease_name=disease_name
-            )
-
-            db.add(diagnosis_data)
-            db.commit()
-            db.refresh(diagnosis_data)
-
-            logger.info(f"새로운 진단 데이터가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_data.diagnosis_id}")
-            return diagnosis_data
+      
         
     except Exception as e:
         logger.error(f"데이터베이스 저장 중 오류: {e}")
