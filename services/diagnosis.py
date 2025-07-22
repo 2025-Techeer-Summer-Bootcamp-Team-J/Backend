@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+model = genai.GenerativeModel("gemini-2.0-flash-latest")
 
 logger = logging.getLogger(__name__)
 
@@ -46,24 +46,49 @@ def save_diagnosis_data(
     진단 결과 데이터를 데이터베이스에 저장합니다.
     """
     try:
+        # text_analysis_data에서 disease_name 추출
+        disease_name = text_analysis_data.get("disease_name", "")
+        
         full_detailed_info = {
             "image_analysis": image_analysis_data,
             "text_analysis": text_analysis_data
         }
         
-        diagnosis_data = Diagnosis(
-            user_id=user_id,
-            image=image_base64,
-            confidence=image_analysis_data.get("skin_score", 0),
-            detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False)
-        )
+        # 같은 user_id와 disease_name으로 기존 진단이 있는지 확인
+        existing_diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.user_id == user_id,
+            Diagnosis.disease_name == disease_name,
+            Diagnosis.is_deleted == False
+        ).first()
         
-        db.add(diagnosis_data)
-        db.commit()
-        db.refresh(diagnosis_data)
-        
-        logger.info(f"진단 데이터가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_data.diagnosis_id}")
-        return diagnosis_data
+        if existing_diagnosis:
+            # 기존 진단이 있으면 업데이트
+            existing_diagnosis.image = image_base64
+            existing_diagnosis.confidence = image_analysis_data.get("skin_score", 0)
+            existing_diagnosis.detailed_info_json = json.dumps(full_detailed_info, ensure_ascii=False)
+            existing_diagnosis.updated_at = db.execute("SELECT NOW()").scalar()
+            
+            db.commit()
+            db.refresh(existing_diagnosis)
+            
+            logger.info(f"기존 진단 데이터가 업데이트되었습니다. Diagnosis ID: {existing_diagnosis.diagnosis_id}")
+            return existing_diagnosis
+        else:
+            # 새로운 진단 생성
+            diagnosis_data = Diagnosis(
+                user_id=user_id,
+                image=image_base64,
+                confidence=image_analysis_data.get("skin_score", 0),
+                detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False),
+                disease_name=disease_name
+            )
+            
+            db.add(diagnosis_data)
+            db.commit()
+            db.refresh(diagnosis_data)
+            
+            logger.info(f"새로운 진단 데이터가 성공적으로 저장되었습니다. Diagnosis ID: {diagnosis_data.diagnosis_id}")
+            return diagnosis_data
         
     except Exception as e:
         logger.error(f"데이터베이스 저장 중 오류: {e}")
@@ -214,18 +239,19 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         Return a JSON object with the following structure. All responses must be in Korean.
 
         {{
+        "disease_name": "{disease_name} ",
         "ai_opinion": "Brief summary and core recommendations (1-2 sentences in Korean)",
-        "detailed_description": "1. 정의: Brief definition. 2. 특징: 2-3 main symptoms. 3. 원인: 2-3 main causes.",
+        "detailed_description": "정의: Brief definition. 특징: 2-3 main symptoms. 원인: 2-3 main causes.",
         "precautions": [
         "Precaution 1 (complete sentence in Korean)",
         "Precaution 2 (complete sentence in Korean)",
         "Precaution 3 (complete sentence in Korean)"
         ],
         "management": {{
-        "보습관리": "Moisturizing advice (complete sentence in Korean)",
-        "청결관리": "Cleanliness advice (complete sentence in Korean)",
-        "환경관리": "Environment advice (complete sentence in Korean)",
-        "의복관리": "Clothing advice (complete sentence in Korean)"
+        "보습관리": "보습: Moisturizing advice (complete sentence in Korean)",
+        "청결관리": "청결: Cleanliness advice (complete sentence in Korean)",
+        "환경관리": "환경: Environment advice (complete sentence in Korean)",
+        "의복관리": "의복: Clothing advice (complete sentence in Korean)"
         }}
         }}
         '''
