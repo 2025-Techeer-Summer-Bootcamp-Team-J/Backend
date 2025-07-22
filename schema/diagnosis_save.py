@@ -1,9 +1,9 @@
 from pydantic import BaseModel
 from typing import Dict, Any
+from fastapi import File, UploadFile
 
 class SaveDiagnosisRequest(BaseModel):
     user_id: int
-    image_base64: str
     image_analysis: Dict[str, Any]
     text_analysis: Dict[str, Any]
 
@@ -15,7 +15,7 @@ class SaveDiagnosisResponse(BaseModel):
 class SavedDiagnosisData(BaseModel):
     diagnosis_id: int
     user_id: int
-    image_base64: str
+    image: Dict[str, Any]
     image_analysis: Dict[str, Any]
     text_analysis: Dict[str, Any]
 

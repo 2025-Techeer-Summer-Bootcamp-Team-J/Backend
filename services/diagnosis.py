@@ -38,7 +38,7 @@ def get_diagnosis_table(db: Session):
 def save_diagnosis_data(
     db: Session, 
     user_id: int, 
-    image_base64: str, 
+    image: str, 
     image_analysis_data: dict, 
     text_analysis_data: dict
 ) -> Diagnosis:
@@ -53,8 +53,8 @@ def save_diagnosis_data(
         
         diagnosis_data = Diagnosis(
             user_id=user_id,
-            image=image_base64,
-            confidence=image_analysis_data.get("skin_score", 0),
+            image=image,
+            skinType_score=image_analysis_data.get("skin_score", 0),
             detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False)
         )
         

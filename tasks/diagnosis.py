@@ -56,7 +56,8 @@ def process_diagnosis_task(user_id: int, image_base64: str):
         return {
             "code": 200,
             "message": "진단정보 생성 성공",
-            "data": [data.dict() for data in simplified_data]
+            "data": [data.dict() for data in simplified_data],
+            "image_base64": image_base64
         }
             
     except Exception as e:
