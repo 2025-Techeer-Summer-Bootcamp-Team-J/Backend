@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 import os
 load_dotenv()
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash-latest")
+model = genai.GenerativeModel("gemini-2.0-flash")
 
 logger = logging.getLogger(__name__)
 
