@@ -37,3 +37,4 @@ inference-sdk==0.51.3
 pytz==2024.1
 google-generativeai
 Pillow==11.1.0
+google-cloud-storage
