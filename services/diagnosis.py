@@ -221,17 +221,17 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
 
         {{
         "ai_opinion": "Brief summary and core recommendations (1-2 sentences in Korean)",
-        "detailed_description": "1. 정의: Brief definition. 2. 특징: 2-3 main symptoms. 3. 원인: 2-3 main causes.",
+        "detailed_description": "정의: Brief definition. 특징: 2-3 main symptoms. 원인: 2-3 main causes.",
         "precautions": [
         "Precaution 1 (complete sentence in Korean)",
         "Precaution 2 (complete sentence in Korean)",
         "Precaution 3 (complete sentence in Korean)"
         ],
         "management": {{
-        "보습관리": "Moisturizing advice (complete sentence in Korean)",
-        "청결관리": "Cleanliness advice (complete sentence in Korean)",
-        "환경관리": "Environment advice (complete sentence in Korean)",
-        "의복관리": "Clothing advice (complete sentence in Korean)"
+        "보습관리": "보습: Moisturizing advice (complete sentence in Korean)",
+        "청결관리": "청결: Cleanliness advice (complete sentence in Korean)",
+        "환경관리": "환경: Environment advice (complete sentence in Korean)",
+        "의복관리": "의복: Clothing advice (complete sentence in Korean)"
         }}
         }}
         '''
