@@ -28,7 +28,7 @@ router = APIRouter(
              summary="비동기 진단 요청",
              description="이미지를 업로드하여 비동기 진단을 요청합니다")
 async def create_diagnosis_async(
-    user_id: int = Form(...),
+    user_id: str = Form(...),
     file: UploadFile = File(...),
 ):
     """
@@ -187,7 +187,7 @@ def get_task_status(task_id: str):
              description="이미지를 업로드하여 동기 진단을 요청합니다. 같은 질환명의 신뢰도를 합쳐서 100분위로 정규화하여 반환합니다.")
 async def create_diagnosis_sync(
     request: Request,
-    user_id: int = Form(...), 
+    user_id: str = Form(...), 
     file: UploadFile = File(...), 
     db: Session = Depends(get_db)
 ):
@@ -248,7 +248,7 @@ async def create_diagnosis_sync(
         )
 
 @router.get("/users/{user_id}/diagnoses", response_model=UserDiagnosisBasicResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
-def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+def read_user_diagnoses(user_id: str, db: Session = Depends(get_db)):
     try:
         # user_id 유효성 검사 - 0보다 큰 양수여야 함
         if user_id <= 0:
@@ -294,7 +294,7 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
         )
 
 @router.delete("/{diagnosis_id}", summary="진단 삭제", description="진단 정보를 삭제합니다")
-def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends(get_db)):
+def delete_user_diagnosis(user_id: str, diagnosis_id: int, db: Session = Depends(get_db)):
 
     deleted_diagnosis = delete_diagnosis(db, user_id, diagnosis_id)
 
@@ -362,7 +362,7 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
 # <<< 질병 정보 스트리밍 생성 API >>>
 @router.post("/generate-stream", summary="질병 정보 스트리밍 생성", description="사진과 질병명을 받아 SSE로 상세 정보를 스트리밍합니다. 스트리밍이 완료되면 자동으로 데이터베이스에 저장됩니다.")
 async def generate_disease_info_stream(
-    user_id: int = Form(...),
+    user_id: str = Form(...),
     disease_name: str = Form(...),
     image: UploadFile = File(...),
     db: Session = Depends(get_db)
@@ -395,7 +395,7 @@ async def generate_disease_info_stream(
              summary="진단 결과 저장",
              description="스트리밍 완료 후 진단 결과 데이터를 데이터베이스에 저장합니다")
 async def save_diagnosis_result(
-    user_id: int,
+    user_id: str,
     image: UploadFile = File(...),
     image_analysis: str = Form(...),
     text_analysis: str = Form(...),
@@ -507,7 +507,7 @@ async def save_diagnosis_additional_info(
             description="특정 진단의 보조 정보를 조회합니다")
 async def get_diagnosis_additional_info(
     diagnosis_id: int,
-    user_id: int,  # Query parameter로 받거나 JWT에서 추출
+    user_id: str,  # Query parameter로 받거나 JWT에서 추출
     db: Session = Depends(get_db)
 ):
     """

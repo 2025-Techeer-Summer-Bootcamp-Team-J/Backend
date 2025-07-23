@@ -75,7 +75,7 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="API 응답을 파싱할 수 없습니다")
 
-def get_skintype_analysis(db: Session, user_id: int, image: UploadFile) -> Dict[str, Any]:
+def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[str, Any]:
     """이미지를 분석하여 피부 유형 정보를 반환하고 사용자별로 결과를 저장합니다."""
     
     # 사용자 존재 여부 확인

@@ -38,11 +38,13 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
         event_type = raw_payload.get('type')
         print(f"Clerk Event Type: {event_type}")
 
+        clerk_user_id = clerk_event_data.get('id')  # Clerk에서 전달되는 고유 ID
         mapped_data = {
             "email": clerk_event_data.get('email_addresses', [{}])[0].get('email_address') if clerk_event_data.get('email_addresses') else None,
             "first_name": clerk_event_data.get('first_name'),
             "last_name": clerk_event_data.get('last_name'),
             "profile_image_url": clerk_event_data.get('profile_image_url'),
+            "user_id": clerk_user_id,
             "name": clerk_event_data.get('username') or clerk_event_data.get('first_name')
         }
 
@@ -96,7 +98,7 @@ async def clerk_webhook(request: Request, db: Session = Depends(get_db)):
             print(f"Server error during user creation: {e}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Server error during user creation: {str(e)}")
 @router.get("/{user_id}/dashboard", summary="유저 대시보드 조회", description="유저 대시보드를 조회합니다")
-def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
+def get_user_dashboard(user_id: str, db: Session = Depends(get_db)):
     try:
         dashboard = get_dashboard(db, user_id)
         return ResultResponseModel(status_code=200, message="유저 대시보드 조회 성공", data=dashboard)
