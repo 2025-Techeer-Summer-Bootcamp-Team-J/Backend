@@ -7,7 +7,7 @@ from schema.dashboard import Dashboard
 from fastapi import HTTPException, status
 from schema.diagnosis import box_to_schema
 
-def get_dashboard(db: Session, user_id: int) -> Dashboard:
+def get_dashboard(db: Session, user_id: str) -> Dashboard:
     # 최근 30일간 진단 기록 조회
     try:
         thirty_days_ago = datetime.now() - timedelta(days=30)

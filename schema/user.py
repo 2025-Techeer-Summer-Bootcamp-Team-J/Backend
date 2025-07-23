@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class UserCreate(BaseModel):
+    user_id: Optional[str] = None
     email: Optional[str] = None
     password: Optional[str] = None
     name: Optional[str] = None
@@ -13,7 +14,7 @@ class UserCreate(BaseModel):
     birth_date: Optional[datetime] = None
 
 class UserRead(BaseModel):
-    user_id: int
+    user_id: str
     name: Optional[str] = None
     first_name: Optional[str] = None
     last_name: Optional[str] = None

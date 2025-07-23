@@ -20,7 +20,7 @@ model = genai.GenerativeModel("gemini-2.0-flash")
 
 logger = logging.getLogger(__name__)
 
-def delete_diagnosis(db: Session, user_id: int, diagnosis_id: int):
+def delete_diagnosis(db: Session, user_id: str, diagnosis_id: int):
     diagnosis = db.query(Diagnosis).filter(Diagnosis.user_id == user_id, Diagnosis.diagnosis_id == diagnosis_id, Diagnosis.is_deleted == False).first()
     if not diagnosis:
         raise HTTPException(status_code=404, detail="진단 정보가 없습니다")
@@ -37,7 +37,7 @@ def get_diagnosis_table(db: Session):
 
 def save_diagnosis_data(
     db: Session, 
-    user_id: int, 
+    user_id: str, 
     image: str, 
     image_analysis_data: dict, 
     text_analysis_data: dict
@@ -78,7 +78,7 @@ def save_diagnosis_data(
 
 def save_additional_info(
     db: Session, 
-    user_id: int, 
+    user_id: str, 
     diagnosis_id: int, 
     main_symptoms: list, 
     itching_level: int = None,
@@ -123,7 +123,7 @@ def save_additional_info(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"보조 정보 저장 실패: {str(e)}")
 
-def get_additional_info(db: Session, user_id: int, diagnosis_id: int) -> dict:
+def get_additional_info(db: Session, user_id: str, diagnosis_id: int) -> dict:
     """
     진단의 보조 정보를 조회합니다.
     """
@@ -174,7 +174,7 @@ def get_additional_info(db: Session, user_id: int, diagnosis_id: int) -> dict:
         logger.error(f"보조 정보 조회 중 오류: {e}")
         raise HTTPException(status_code=500, detail=f"보조 정보 조회 실패: {str(e)}")
 
-async def generate_disease_info_stream_service(image_bytes: bytes, disease_name: str, user_id: int):
+async def generate_disease_info_stream_service(image_bytes: bytes, disease_name: str, user_id: str):
     """
     이미지와 질병명을 처리하여 질병 정보를 생성하고 SSE를 통해 스트리밍합니다.
     """

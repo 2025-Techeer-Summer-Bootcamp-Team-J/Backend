@@ -20,7 +20,7 @@ def get_skintype_by_id(skintype_id: int, db: Session = Depends(get_db)):
 
 @router.post("/users/{user_id}/image", summary="피부 유형 분석", description="얼굴 사진을 업로드하여 피부 유형을 분석합니다")
 async def create_skintype_analysis(
-    user_id: int,
+    user_id: str,
     image: UploadFile = File(..., description="분석할 얼굴 사진 (JPG/JPEG, 최대 2MB)"),
     db: Session = Depends(get_db)
     ):

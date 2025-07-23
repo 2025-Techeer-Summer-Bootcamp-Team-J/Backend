@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, Table, ForeignKey, DateTime, Boolean, VARCHAR, func
+from sqlalchemy import Column, Integer, String, TEXT, Table, ForeignKey, DateTime, Boolean, VARCHAR, func
 from sqlalchemy.orm import relationship
 from database.database import Base
 
@@ -14,8 +14,8 @@ class Disease(Base):
     disease_id = Column(Integer, primary_key=True, index=True)
     main_symptom = Column(VARCHAR(255), nullable=False)
     disease_name = Column(VARCHAR(255), nullable=False)
-    description = Column(Text, nullable=False)
-    precautions = Column(Text, nullable=False)
+    description = Column(TEXT, nullable=False)
+    precautions = Column(TEXT, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False) 
