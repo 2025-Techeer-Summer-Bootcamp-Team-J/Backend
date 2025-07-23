@@ -220,6 +220,7 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         Return a JSON object with the following structure. All responses must be in Korean.
 
         {{
+
         "diagnosis_name": "disease name in Korean",
         "ai_opinion": "Brief summary and core recommendations (1-2 sentences in Korean)",
         "detailed_description": "정의: Brief definition. 특징: 2-3 main symptoms. 원인: 2-3 main causes.",
@@ -252,6 +253,7 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         
         # 스트리밍으로 각 섹션 전송
         sections = [
+
             ("diagnosis_name", "disease_name")
             ("ai_opinion", "ai_opinion"),
             ("detailed_description", "detailed_description"),
