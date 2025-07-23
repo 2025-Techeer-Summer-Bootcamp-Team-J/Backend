@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table, VARCHAR, func, DateTime, Boolean, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table, VARCHAR, func, DateTime, Boolean, Text, BigInteger
 from sqlalchemy.orm import relationship
 from database.database import Base
 
@@ -18,7 +18,7 @@ class Diagnosis(Base):
     __tablename__ = "DIAGNOSIS"
 
     diagnosis_id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("USER.user_id"), nullable=False)
+    user_id = Column(BigInteger, ForeignKey("USER.user_id"), nullable=False)
     skin_type_id = Column(Integer, ForeignKey("SKINTYPE.skin_type_id"), nullable=True)
 
     

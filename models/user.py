@@ -1,11 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, VARCHAR
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, VARCHAR, BigInteger
 from sqlalchemy.orm import relationship
 from database.database import Base
 
 class User(Base):
     __tablename__ = "USER"
 
-    user_id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(BigInteger, primary_key=True, index=True)
     email = Column(VARCHAR(255), unique=True, index=True, nullable=True) # String으로 변경 및 nullable 허용
     name = Column(VARCHAR(255), nullable=True) # Changed to String and nullable
     first_name = Column(VARCHAR(255), nullable=True)
