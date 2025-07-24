@@ -20,11 +20,11 @@ class SaveDiagnosisResponse(BaseModel):
 class SavedDiagnosisData(BaseModel):
     diagnosis_id: int
     user_id: str
-    image: Dict[str, Any]
+    image_base64: str  # 이미지(Base64 또는 URL) 문자열
     image_analysis: Dict[str, Any]
     text_analysis: Dict[str, Any]
-    disease_name: Optional[str] = None  # 질병명 필드 추가
-    diseases: List[DiseaseRead] = []  # 연관된 질병 정보 추가
+    disease_name: Optional[str] = None  # 질병명 필드(선택 사항)
+    diseases: List[DiseaseRead] = []  # 연관된 질병 정보
 
 class SavedDiagnosisResponse(BaseModel):
     code: int
