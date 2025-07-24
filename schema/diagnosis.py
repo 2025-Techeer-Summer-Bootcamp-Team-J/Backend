@@ -92,6 +92,7 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
             user_id=getattr(diagnosis_obj, 'user_id', ''),
             skin_type_id=getattr(diagnosis_obj, 'skin_type_id', None),
+            disease_name=getattr(diagnosis_obj, 'disease_name', None),
             confidence=getattr(diagnosis_obj, 'confidence', None),
             image=getattr(diagnosis_obj, 'image', None),
             after=getattr(diagnosis_obj, 'after', None),
