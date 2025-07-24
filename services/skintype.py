@@ -12,6 +12,7 @@ from urllib3.util.retry import Retry
 from models.skintype import SkinType
 from models.diagnosis import Diagnosis
 from models.user import User
+from models.user_skintype import UserSkinType
 from schema.skintype import SkinTypeCreate, SkinTypeUpdate, SkinTypeDelete, SkinTypeRead
 
 load_dotenv()
@@ -98,23 +99,25 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
     
     # 데이터베이스 ID 매핑 (0->1, 1->2, 2->3, 3->4)
     db_skin_type_id = skin_type_code + 1
-    skintype_info = db.query(SkinType).filter(SkinType.skin_type_id == db_skin_type_id).first()
-    
+    try:
+        skintype_info = db.query(SkinType).filter(SkinType.skin_type_id == db_skin_type_id).first()
+    except Exception:
+        raise HTTPException(status_code=404, detail="데이터베이스에 일치하는 피부 유형이 없습니다.")
     # 분석 결과를 Diagnosis 테이블에 저장
     try:
-        new_diagnosis = Diagnosis(
+        user_skintype = UserSkinType(
             user_id=user_id,
-            skin_type_id=db_skin_type_id,
-            class_name="skin_analysis",
-            confidence=1.0,
-            x1=0, y1=0, x2=0, y2=0,
-            image=image.filename if image.filename else "unknown"
+            skin_type_id=db_skin_type_id
         )
-        db.add(new_diagnosis)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail="user_skintype 생성 실패: " + str(e))
+    try:
+        db.add(user_skintype)
         db.commit()
-        db.refresh(new_diagnosis)
-    except Exception:
+        db.refresh(user_skintype)
+    except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=404, detail="db 트랜잭션 에러: " + str(e))
     
     # 응답 데이터 구성
     if not skintype_info:

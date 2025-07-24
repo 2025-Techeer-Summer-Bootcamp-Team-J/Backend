@@ -19,3 +19,7 @@ class User(Base):
     is_deleted = Column(Boolean, default=False) 
 
     diagnoses = relationship("Diagnosis", back_populates="user") 
+    skintypes = relationship(
+        "UserSkinType",
+        back_populates="user"
+    ) 
