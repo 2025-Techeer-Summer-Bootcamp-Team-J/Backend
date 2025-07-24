@@ -47,7 +47,7 @@ def save_diagnosis_data(
     """
     try:
         # text_analysis_data에서 disease_name 추출
-        disease_name = text_analysis_data.get("disease_name", "")
+        disease_name = text_analysis_data.get("diagnosis_name", "")
 
         full_detailed_info = {
             "image_analysis": image_analysis_data,
@@ -59,7 +59,8 @@ def save_diagnosis_data(
             user_id=user_id,
             image=image,
             skinType_score=image_analysis_data.get("skin_score", 0),
-            detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False)
+            detailed_info_json=json.dumps(full_detailed_info, ensure_ascii=False),
+            disease_name=disease_name
         )
         
         db.add(diagnosis_data)
