@@ -16,11 +16,42 @@ from fastapi.responses import StreamingResponse
 from services.diagnosis import generate_disease_info_stream_service
 from schema.diagnosis_save import SaveDiagnosisResponse, SavedDiagnosisResponse
 from crud.storage import upload_image
+from schema.ResultResponseModel import ResultResponseModel
 
 router = APIRouter(
     prefix="/diagnoses",
     tags=["diagnoses"]
 )
+
+# <<< 진단 이미지 조회 API >>>
+@router.get("/{diagnosis_id}/image", summary="진단 이미지 조회", description="진단 ID로 진단 시 사용한 이미지를 조회합니다.")
+async def get_diagnosis_image(
+    diagnosis_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    진단 ID로 진단 시 사용한 이미지를 조회합니다.
+    """
+    try:
+        diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_id == diagnosis_id,
+            Diagnosis.is_deleted == False
+        ).first()
+
+        if not diagnosis:
+            raise HTTPException(status_code=404, detail="진단 정보를 찾을 수 없습니다")
+
+        # image URL이 None이면 예외 처리
+        if not diagnosis.image:
+            raise HTTPException(status_code=404, detail="해당 진단에 저장된 이미지가 없습니다")
+
+        return ResultResponseModel(status_code=200, message="이미지 조회 성공", data={"image_url": diagnosis.image})
+
+    except HTTPException as e:
+        # HTTPException은 그대로 전달
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"이미지 조회 중 오류가 발생했습니다: {str(e)}")
 
 # <<< 비동기 진단 요청 API >>>
 @router.post("",
