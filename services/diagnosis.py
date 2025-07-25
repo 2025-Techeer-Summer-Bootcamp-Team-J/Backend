@@ -36,18 +36,20 @@ def get_diagnosis_table(db: Session):
     return [DiagnosisData.model_validate(diagnosis) for diagnosis in diagnoses]
 
 def save_diagnosis_data(
-    db: Session, 
-    user_id: str, 
-    image: str, 
-    image_analysis_data: dict, 
-    text_analysis_data: dict
+    db: Session,
+    user_id: str,
+    image: str,
+    image_analysis_data: dict,
+    text_analysis_data: dict,
+    disease_name: str = ""
 ) -> Diagnosis:
     """
     진단 결과 데이터를 데이터베이스에 저장합니다.
     """
     try:
-        # text_analysis_data에서 disease_name 추출
-        disease_name = text_analysis_data.get("diagnosis_name", "")
+        # disease_name 파라미터가 주어지지 않은 경우 text_analysis_data에서 추출하여 Fallback
+        if not disease_name:
+            disease_name = text_analysis_data.get("diagnosis_name", "")
 
         full_detailed_info = {
             "image_analysis": image_analysis_data,

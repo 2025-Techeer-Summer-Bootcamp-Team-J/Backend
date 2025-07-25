@@ -374,6 +374,7 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
             "diagnosis_id": diagnosis.diagnosis_id,
             "user_id": diagnosis.user_id,
             "image_base64": diagnosis.image or "",
+            "disease_name": diagnosis.disease_name,
             "image_analysis": detailed_info.get("image_analysis", {}),
             "text_analysis": detailed_info.get("text_analysis", {}),
             "diseases": diseases_data
@@ -430,6 +431,7 @@ async def save_diagnosis_result(
     image: UploadFile = File(...),
     image_analysis: str = Form(...),
     text_analysis: str = Form(...),
+    disease_name: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """
@@ -446,7 +448,8 @@ async def save_diagnosis_result(
             user_id=user_id,
             image=image_url,
             image_analysis_data=image_analysis_dict,
-            text_analysis_data=text_analysis_dict
+            text_analysis_data=text_analysis_dict,
+            disease_name=disease_name
         )
         
         return SaveDiagnosisResponse(

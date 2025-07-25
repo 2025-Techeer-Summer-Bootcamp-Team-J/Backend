@@ -11,6 +11,7 @@ class SaveDiagnosisRequest(BaseModel):
     user_id: str
     image_analysis: Dict[str, Any]
     text_analysis: Dict[str, Any]
+    disease_name: str
 
 class SaveDiagnosisResponse(BaseModel):
     diagnosis_id: int
