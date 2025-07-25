@@ -12,6 +12,9 @@ import re
 from PIL import Image
 import io
 import google.generativeai as genai
+
+# RAG 파이프라인
+from services.rag import generate_disease_info
 from dotenv import load_dotenv
 import os
 load_dotenv()
@@ -215,45 +218,15 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         
         yield f"data: {json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False)}\n\n"
 
-        # 2. 텍스트 기반 질병 정보 생성
+
+        
+        # RAG 기반 정보 생성
         yield f"data: {json.dumps({"type": "status", "data": "세부 정보 생성 중..."}, ensure_ascii=False)}\n\n"
 
-        text_prompt = f'''
-        Please provide information about the skin disease: {disease_name}.
-        Return a JSON object with the following structure. All responses must be in Korean.
+        # 동기 함수이므로 스레드 풀에서 실행
+        loop = asyncio.get_event_loop()
+        text_analysis_data = await loop.run_in_executor(None, generate_disease_info, disease_name)
 
-        {{
-
-        "diagnosis_name": "disease name in Korean",
-        "ai_opinion": "Brief summary and core recommendations (1-2 sentences in Korean)",
-        "detailed_description": "정의: Brief definition. 특징: 2-3 main symptoms. 원인: 2-3 main causes.",
-        "precautions": [
-        "Precaution 1 (complete sentence in Korean)",
-        "Precaution 2 (complete sentence in Korean)",
-        "Precaution 3 (complete sentence in Korean)"
-        ],
-        "management": {{
-        "보습관리": "보습: Moisturizing advice (complete sentence in Korean)",
-        "청결관리": "청결: Cleanliness advice (complete sentence in Korean)",
-        "환경관리": "환경: Environment advice (complete sentence in Korean)",
-        "의복관리": "의복: Clothing advice (complete sentence in Korean)"
-        }}
-        }}
-        '''
-        
-        text_response = await model.generate_content_async(text_prompt)
-
-        if not text_response.parts:
-            raise ValueError("텍스트 분석 결과가 없습니다.")
-
-        # JSON 추출 및 파싱
-        response_text = text_response.text.strip()
-        json_match = re.search(r"```json\n([\s\S]*?)\n```", response_text)
-        if json_match:
-            response_text = json_match.group(1).strip()
-
-        text_analysis_data = json.loads(response_text)
-        
         # 스트리밍으로 각 섹션 전송
         sections = [
 

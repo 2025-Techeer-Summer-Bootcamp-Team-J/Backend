@@ -38,3 +38,9 @@ pytz==2024.1
 google-generativeai
 Pillow==11.1.0
 google-cloud-storage
+langchain==0.2.0
+langchain-community==0.2.0
+langchain-openai==0.2.0
+openai==1.32.0
+tiktoken==0.6.0
+google-cloud-firestore==2.16.1
