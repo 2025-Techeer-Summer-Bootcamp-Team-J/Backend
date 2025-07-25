@@ -16,19 +16,19 @@ from __future__ import annotations
 import os
 from typing import Any, Dict
 
-from langchain.chat_models import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
-from langchain_openai import OpenAIEmbeddings  # type: ignore
+from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 
 from services.firestore_vector import FirestoreVectorStore
 
 # ---- 환경 변수 ----
 GCP_PROJECT = os.getenv("GCP_PROJECT")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # ---- Vector Store & Retriever ----
-_embeddings = OpenAIEmbeddings(api_key=OPENAI_API_KEY)
+_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", api_key=GEMINI_API_KEY)
 _vector_store = FirestoreVectorStore(
     embedding=_embeddings,
     project_id=GCP_PROJECT,
@@ -66,7 +66,7 @@ _rag_chain = (
     RunnableParallel({"context": _retriever, "question": RunnablePassthrough()})
     | (lambda d: {"context": "\n".join([doc.page_content for doc in d["context"]]), "question": d["question"]})
     | (lambda d: _prompt.format(**d, output_schema=_OUTPUT_SCHEMA))
-    | ChatOpenAI(model="gpt-4o-mini", temperature=0.2, api_key=OPENAI_API_KEY)
+    | ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0.2, api_key=GEMINI_API_KEY)
 )
 
 
