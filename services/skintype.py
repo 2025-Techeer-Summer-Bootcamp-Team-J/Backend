@@ -1,3 +1,4 @@
+import base64
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, UploadFile
 import requests
@@ -40,7 +41,7 @@ def create_session_with_retry():
 
 def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
     """AILabAPI를 사용하여 피부 유형을 분석합니다."""
-    url = "https://www.ailabapi.com/api/portrait/analysis/skin-analysis"
+    url = "https://www.ailabapi.com/api/portrait/analysis/skin-analysis-pro"
     
     try:
         image_data = image_file.file.read()
@@ -61,11 +62,45 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
             files_for_requests = {
                 'image': (image_file.filename or 'image.jpg', io.BytesIO(image_data), image_file.content_type or 'application/octet-stream')
             }
-            response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60))
+            data = {
+            "face_quality_control": "1",
+            "return_rect_confidence": "1",
+            "return_maps": "red_area,brown_area,texture_enhanced_pores,texture_enhanced_blackheads,texture_enhanced_oily_area,texture_enhanced_lines,water_area,rough_area,roi_outline_map,texture_enhanced_bw"
+            } 
+            response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60), data=data)
             
             if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail="AILab API 호출 실패")
-            return response.json()
+                raise HTTPException(status_code=response.status_code, detail=f"AILab API 호출 실패 {response.text}")
+                
+            response_json = response.json()
+            # 여러 face_maps 항목을 반복문으로 이미지 저장
+            face_map_keys = [
+                "red_area",
+                "brown_area",
+                "texture_enhanced_pores",
+                "texture_enhanced_blackheads",
+                "texture_enhanced_oily_area",
+                "texture_enhanced_lines",
+                "water_area",
+                "rough_area",
+                "roi_outline_map",
+                "texture_enhanced_bw"
+            ]
+            print("response_json=====================",response_json)
+            result = response_json.get("result", {})
+            face_maps = result.get("face_maps", {})
+            print("fase_maps =======================",face_maps)
+            os.makedirs("output", exist_ok=True)
+            for key in face_map_keys:
+                data_url = face_maps.get(key)
+                print("data_url=",data_url)
+                if data_url:
+                    image_bytes = base64.b64decode(data_url)
+                    save_path = f"output/{key}.jpg"
+                    with open(save_path, "wb") as f:
+                        print(save_path)
+                        f.write(image_bytes)
+            return response_json
         
     except requests.exceptions.Timeout:
         raise HTTPException(status_code=504, detail="API 호출 시간이 초과되었습니다")
@@ -86,7 +121,6 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
     
     # AILab API로 피부 분석 수행
     analysis_result = analyze_skin_with_ailab(image)
-    
     # skin_type 값 추출 (result.skin_type.skin_type 경로)
     skin_type_code = analysis_result.get('result', {}).get('skin_type', {}).get('skin_type')
     
