@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, responses
 from sqlalchemy.orm import Session
 from schema.ResultResponseModel import ResultResponseModel
 from services.diseases import create_disease as create_disease_service, delete_disease as delete_disease_service, update_disease as update_disease_service, get_disease_table as get_disease_table
+from services.firestore_example import firestore_demo
 from services.picture_merge import overlay_image
 from services.skintype import create_skintype as create_skintype_service, delete_skintype as delete_skintype_service, update_skintype as update_skintype_service, get_skintype_table as get_skintype_table
 from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseRead
@@ -94,4 +95,11 @@ def skin_score_graph_test():
         return {"message": "그래프가 성공적으로 출력되었습니다."}
     except Exception as e:
         raise  HTTPException(400,f"{e}")
-    
+
+@router.get("/fire_store_test")
+def fire_store_test():
+    try:
+        firestore_demo()
+    except Exception as e:
+        raise HTTPException(400,f'{e}')
+    return responses.Response(status_code=200)
