@@ -27,13 +27,25 @@ from services.firestore_vector import FirestoreVectorStore
 GCP_PROJECT = os.getenv("GCP_PROJECT")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# ---- Vector Store & Retriever ----
-_embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", api_key=GEMINI_API_KEY)
-_vector_store = FirestoreVectorStore(
-    embedding=_embeddings,
-    project_id=GCP_PROJECT,
-)
-_retriever = _vector_store.as_retriever(k=4)
+from functools import lru_cache
+
+# ---- Vector Store & RAG 체인 Lazy 생성 ----
+@lru_cache(maxsize=1)
+def _build_rag_chain():
+    """환경 변수를 확인하고 RAG 체인을 1회만 생성한다."""
+    if not GCP_PROJECT or not GEMINI_API_KEY:
+        raise RuntimeError("GCP_PROJECT 또는 GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
+
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", api_key=GEMINI_API_KEY)
+    vector_store = FirestoreVectorStore(embedding=embeddings, project_id=GCP_PROJECT)
+    retriever = vector_store.as_retriever(k=4)
+
+    return (
+        RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
+        | (lambda d: {"context": "\n".join([doc.page_content for doc in d["context"]]), "question": d["question"]})
+        | (lambda d: _prompt.format(**d, output_schema=_OUTPUT_SCHEMA))
+        | ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0.2, api_key=GEMINI_API_KEY)
+    )
 
 # ---- Prompt ----
 _TEMPLATE = (
@@ -61,23 +73,16 @@ _prompt = ChatPromptTemplate.from_messages([
     ("system", _TEMPLATE),
 ])
 
-# ---- RAG 체인 ----
-_rag_chain = (
-    RunnableParallel({"context": _retriever, "question": RunnablePassthrough()})
-    | (lambda d: {"context": "\n".join([doc.page_content for doc in d["context"]]), "question": d["question"]})
-    | (lambda d: _prompt.format(**d, output_schema=_OUTPUT_SCHEMA))
-    | ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0.2, api_key=GEMINI_API_KEY)
-)
 
 
 def get_rag_chain():
-    """외부에서 호출할 수 있도록 RAG 체인을 반환"""
-    return _rag_chain
+    """외부에서 호출할 수 있도록 Lazy RAG 체인을 반환"""
+    return _build_rag_chain()
 
 
 def generate_disease_info(disease_name: str) -> Dict[str, Any]:
     """질병명을 입력받아 RAG 기반 JSON 정보를 반환"""
-    res = _rag_chain.invoke(disease_name)
+    res = get_rag_chain().invoke(disease_name)
     import json
 
     # 응답에서 첫 번째 JSON 블록 추출
