@@ -23,16 +23,14 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 
 from services.firestore_vector import FirestoreVectorStore
 
-# ---- 환경 변수 ----
-GCP_PROJECT = os.getenv("GCP_PROJECT")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
 from functools import lru_cache
 
 # ---- Vector Store & RAG 체인 Lazy 생성 ----
 @lru_cache(maxsize=1)
 def _build_rag_chain():
     """환경 변수를 확인하고 RAG 체인을 1회만 생성한다."""
+    GCP_PROJECT = os.getenv("GCP_PROJECT")
+    GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if not GCP_PROJECT or not GEMINI_API_KEY:
         raise RuntimeError("GCP_PROJECT 또는 GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
 

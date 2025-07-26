@@ -35,7 +35,6 @@ celery==5.4.0
 kombu==5.4.2
 inference-sdk==0.51.3
 pytz==2024.1
-google-generativeai
 Pillow==11.1.0
 google-cloud-storage
 langchain==0.2.0
