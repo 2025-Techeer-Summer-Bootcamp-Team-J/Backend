@@ -38,3 +38,6 @@ pytz==2024.1
 google-generativeai
 Pillow==11.1.0
 google-cloud-storage
+
+matplotlib
+numpy
