@@ -84,7 +84,14 @@ def generate_disease_info(disease_name: str) -> Dict[str, Any]:
     import re
 
     text = res.content if hasattr(res, "content") else str(res)
-    match = re.search(r"```json\n([\s\S]*?)\n```", text)
-    if match:
-        text = match.group(1)
-    return json.loads(text)
+
+    # LLM 응답에서 JSON 블록 추출 (```json ... ```)
+    match = re.search(r"```json[\r\n]+([\s\S]*?)```", text)
+    json_str = match.group(1) if match else text
+
+    # JSON 파싱 시 예외 처리로 안정성 강화
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError as e:
+        # LLM 반환 형식 오류 시 명확한 예외 전달
+        raise ValueError("모델 응답에서 JSON 파싱 실패") from e
