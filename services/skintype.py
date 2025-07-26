@@ -67,12 +67,15 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
             "return_rect_confidence": "1",
             "return_maps": "red_area,brown_area,texture_enhanced_pores,texture_enhanced_blackheads,texture_enhanced_oily_area,texture_enhanced_lines,water_area,rough_area,roi_outline_map,texture_enhanced_bw"
             } 
-            response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60), data=data)
+            #response = session.post(url, headers=headers, files=files_for_requests, timeout=(10, 60), data=data)
             
-            if response.status_code != 200:
-                raise HTTPException(status_code=response.status_code, detail=f"AILab API 호출 실패 {response.text}")
+            # if response.status_code != 200:
+            #     raise HTTPException(status_code=response.status_code, detail=f"AILab API 호출 실패 {response.text}")
                 
-            response_json = response.json()
+            #response_json = response.json()
+            with open("output/response_json.txt", "r", encoding="utf-8") as f:
+                response_json = json.load(f)
+            
             # 여러 face_maps 항목을 반복문으로 이미지 저장
             face_map_keys = [
                 "red_area",
@@ -87,6 +90,9 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
                 "texture_enhanced_bw"
             ]
             print("response_json=====================",response_json)
+            # response_json을 txt 파일로 저장
+            with open("output/response_json.txt", "w", encoding="utf-8") as f:
+                f.write(json.dumps(response_json, ensure_ascii=False, indent=4))
             result = response_json.get("result", {})
             face_maps = result.get("face_maps", {})
             print("fase_maps =======================",face_maps)
@@ -100,6 +106,7 @@ def analyze_skin_with_ailab(image_file: UploadFile) -> Dict[str, Any]:
                     with open(save_path, "wb") as f:
                         print(save_path)
                         f.write(image_bytes)
+            
             return response_json
         
     except requests.exceptions.Timeout:
@@ -123,10 +130,11 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
     analysis_result = analyze_skin_with_ailab(image)
     # skin_type 값 추출 (result.skin_type.skin_type 경로)
     skin_type_code = analysis_result.get('result', {}).get('skin_type', {}).get('skin_type')
-    
+    skin_type_scores= analysis_result.get('result',{}).get('score_info',{})
     if skin_type_code is None:
-        raise HTTPException(status_code=500, detail="피부 유형 분석 결과를 얻을 수 없습니다")
-    
+        raise HTTPException(status_code=400, detail="피부 유형 분석 결과를 얻을 수 없습니다")
+    if skin_type_scores is {}:
+        raise HTTPException(status_code=400, detail="피부 점수 상세 정보를 얻을 수 없습니다.")
     # 값 범위 확인 (0-3)
     if skin_type_code < 0 or skin_type_code > 3:
         skin_type_code = 2  # 기본값: 중성
@@ -138,6 +146,8 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
     except Exception:
         raise HTTPException(status_code=404, detail="데이터베이스에 일치하는 피부 유형이 없습니다.")
     # 분석 결과를 Diagnosis 테이블에 저장
+        # 이미 존재하는지 확인
+    
     try:
         user_skintype = UserSkinType(
             user_id=user_id,
@@ -145,13 +155,18 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
         )
     except Exception as e:
         raise HTTPException(status_code=404, detail="user_skintype 생성 실패: " + str(e))
-    try:
-        db.add(user_skintype)
-        db.commit()
-        db.refresh(user_skintype)
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=404, detail="db 트랜잭션 에러: " + str(e))
+    exists = db.query(UserSkinType).filter(
+    UserSkinType.user_id == user_id,
+    UserSkinType.skin_type_id == db_skin_type_id
+    ).first()
+    if not exists:
+        try:
+            db.add(user_skintype)
+            db.commit()
+            db.refresh(user_skintype)
+        except Exception as e:
+            db.rollback()
+            raise HTTPException(status_code=404, detail="db 트랜잭션 에러: " + str(e))
     
     # 응답 데이터 구성
     if not skintype_info:
@@ -159,13 +174,15 @@ def get_skintype_analysis(db: Session, user_id: str, image: UploadFile) -> Dict[
         return {
             "user_id": user_id,
             "skin_type_code": skin_type_code,
-            "skin_type_name": skin_type_names.get(skin_type_code, "알 수 없음")
+            "skin_type_name": skin_type_names.get(skin_type_code, "알 수 없음"),
+            "skin_type_scores": skin_type_scores
         }
     
     return {
         "user_id": user_id,
         "skin_type_code": skin_type_code,
-        "skin_type_name": skintype_info.type_name
+        "skin_type_name": skintype_info.type_name,
+        "skin_type_scores": skin_type_scores
     }
 
 

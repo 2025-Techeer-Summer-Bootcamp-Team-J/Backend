@@ -79,4 +79,19 @@ def merge_test():
         return
     except Exception as e:
         raise HTTPException(400,f"{e}")
+
+@router.get("/skin_score_graph_test")
+def skin_score_graph_test():
+    from services.skin_score_graph import plot_score_radar
+    import json
+    try:
+        with open("output/response_json.txt", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        result = data["result"]
+        score_info = result["score_info"]
+        print("score_info: ",score_info)
+        plot_score_radar(score_info)
+        return {"message": "그래프가 성공적으로 출력되었습니다."}
+    except Exception as e:
+        raise  HTTPException(400,f"{e}")
     
