@@ -37,6 +37,7 @@ inference-sdk==0.51.3
 pytz==2024.1
 Pillow==11.1.0
 google-cloud-storage
+
 langchain==0.2.0
 langchain-community==0.2.0
 langchain-openai==0.2.0
@@ -45,3 +46,6 @@ tiktoken==0.6.0
 google-cloud-firestore==2.16.1
 langchain-google-genai==0.2.0
 google-generativeai==0.5.0
+matplotlib
+numpy
+
