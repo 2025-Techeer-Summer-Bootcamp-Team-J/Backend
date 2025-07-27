@@ -29,13 +29,12 @@ from functools import lru_cache
 @lru_cache(maxsize=1)
 def _build_rag_chain():
     """환경 변수를 확인하고 RAG 체인을 1회만 생성한다."""
-    GCP_PROJECT = os.getenv("GCP_PROJECT")
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-    if not GCP_PROJECT or not GEMINI_API_KEY:
-        raise RuntimeError("GCP_PROJECT 또는 GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
 
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", api_key=GEMINI_API_KEY)
-    vector_store = FirestoreVectorStore(embedding=embeddings, project_id=GCP_PROJECT)
+    vector_store = FirestoreVectorStore(embedding=embeddings)
     retriever = vector_store.as_retriever(k=4)
 
     return (

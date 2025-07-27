@@ -4,7 +4,6 @@ seed_docs/*.txt 파일을 읽어 FirestoreVectorStore에 추가합니다.
 
 실행 방법:
     export GEMINI_API_KEY=...
-    export GCP_PROJECT=your-project-id  # .env에 넣어두면 docker-compose에서도 전달됨
     python scripts/firestore_seed.py
 """
 from __future__ import annotations
@@ -29,16 +28,12 @@ SEED_DIR = Path(__file__).resolve().parent / ".." / "seed_docs"
 
 
 def main() -> None:
-    project_id = os.getenv("GCP_PROJECT")
-    if not project_id:
-        raise RuntimeError("GCP_PROJECT 환경 변수가 설정되어 있지 않습니다.")
-
     gemini_key = os.getenv("GEMINI_API_KEY")
     if not gemini_key:
         raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되어 있지 않습니다.")
 
     embeddings = GoogleGenerativeAIEmbeddings(api_key=gemini_key)
-    store = FirestoreVectorStore(embedding=embeddings, project_id=project_id)
+    store = FirestoreVectorStore(embedding=embeddings)
 
     txt_files = glob.glob(str(SEED_DIR / "*.txt"))
     if not txt_files:

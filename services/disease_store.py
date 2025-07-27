@@ -11,7 +11,7 @@
         "source": {"기관명": str, "url": str}
     }
 
-FirestoreVectorStore 와 동일하게 GCP_PROJECT 환경 변수를 사용하여 클라이언트를 초기화한다.
+FirestoreVectorStore 와 동일하게 환경 변수를 사용하여 클라이언트를 초기화한다.
 """
 from __future__ import annotations
 
@@ -28,8 +28,8 @@ logger = logging.getLogger(__name__)
 class DiseaseStore:
     """Firestore 래퍼 클래스"""
 
-    def __init__(self, project_id: str | None = None, collection_name: str = "diseases") -> None:
-        self.client = firestore.Client(project=project_id or os.getenv("GCP_PROJECT"))
+    def __init__(self, collection_name: str = "diseases") -> None:
+        self.client = firestore.Client()
         self.collection = self.client.collection(collection_name)
         # 사진 전용 컬렉션
         self.col_photos = self.client.collection("disease_photos")

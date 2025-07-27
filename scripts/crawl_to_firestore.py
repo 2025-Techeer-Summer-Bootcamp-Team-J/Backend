@@ -4,7 +4,6 @@
 웹 페이지를 크롤링한 뒤 스키마에 맞게 Firestore `diseases` 컬렉션에 저장합니다.
 
 사용 예시:
-    export GCP_PROJECT=your-project-id
     export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
     python scripts/crawl_to_firestore.py --input urls.csv
 
@@ -131,11 +130,7 @@ def main() -> None:
     if not csv_path.exists():
         raise FileNotFoundError(csv_path)
 
-    project_id = os.getenv("GCP_PROJECT")
-    if not project_id:
-        raise RuntimeError("GCP_PROJECT 환경 변수가 설정되지 않았습니다.")
-
-    store = DiseaseStore(project_id=project_id)
+    store = DiseaseStore()
 
     rows = load_csv(csv_path)
     docs = [process_row(r) for r in rows]
