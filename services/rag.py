@@ -23,29 +23,30 @@ def _to_str(val: str | SecretStr | None) -> str:
         return val.get_secret_value()
     return val or ""
 
-os.environ["GOOGLE_API_KEY"] = _to_str(os.getenv("GOOGLE_API_KEY"))
 os.environ["GEMINI_API_KEY"] = _to_str(os.getenv("GEMINI_API_KEY"))
 
 import os
 import logging
 from typing import Any, Dict
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+import google.generativeai as genai
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+
 from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 
 from services.firestore_vector import FirestoreVectorStore
 
 from functools import lru_cache
+from PIL import Image
+import io
 
 logger = logging.getLogger(__name__)
 
-# ---- Vector Store & RAG 체인 Lazy 생성 ----
+# ---- Retriever & LLM Lazy 생성 ----
 @lru_cache(maxsize=1)
-def _build_rag_chain():
-    """환경 변수를 확인하고 RAG 체인을 1회만 생성한다."""
-    logger.info("RAG 체인 생성을 시작합니다 (최초 1회 실행)...")
+def _get_retriever_and_llm():
+    """임베딩 Retriever와 Gemini LLM을 1회만 초기화해 재사용"""
+    logger.info("(once) Retriever & LLM 초기화합니다…")
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
@@ -61,41 +62,42 @@ def _build_rag_chain():
     retriever = vector_store.as_retriever(k=4)
     logger.info("  - Retriever(문서 검색기)를 생성했습니다.")
 
-    # SecretStr가 하위 gRPC 라이브러리에서 문제를 일으키므로, .get_secret_value()로 일반 str을 추출합니다.
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro", 
-        temperature=0.2, 
-        google_api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY
-    )
-
-    chain = (
-        RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-        | (lambda d: {"context": "\n".join([doc.page_content for doc in d["context"]]), "question": d["question"]})
-        | (lambda d: _prompt.format(**d, output_schema=_OUTPUT_SCHEMA))
-        | llm
-    )
-    logger.info("RAG 체인 생성을 완료했습니다.")
-    return chain
+    # google-generativeai 설정
+    genai.configure(api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY)
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
+    logger.info("Retriever 및 LLM 초기화 완료.")
+    return retriever, model
 
 # ---- Prompt ----
 _TEMPLATE = (
     "너는 피부과 전문의 AI 어시스턴트다. 제공된 참고 문서를 바탕으로 질문에 답해라.\n"
+    "이미지 분석 결과를 참고하여 질문에 답해라.\n"
+    "보고서 형식으로 답해라.\n"
     "문맥(참고 문서):\n{context}\n\n"
+    "사용자 증상: {symptoms}\n\n"
     "질문: {question}\n\n"
     "다음 JSON 형식으로만 대답해. 다른 설명은 금지.\n"
-    "{output_schema}"
+    "{output_schema}에 있는 모든 내용을 답해라"
 )
 
 _OUTPUT_SCHEMA = """{
-    "diagnosis_name": "질병명(한국어)",
-    "ai_opinion": "요약 및 핵심 권장사항(1-2문장)",
-    "detailed_description": "정의|특징|원인을 포함한 설명",
+    "image_analysis": {
+        "skin_score": "(예시: 1~100사이의 정수)",
+        "estimated_treatment_period": "(예시: 2-4주등 의 기간)"
+    },
+    "disease_name": "질병명(한국어)",
+    "photo_url": "신뢰할 수 있는 사이트의 사진 URL",
+    "detailed_description": "정의|특징(증상)|원인을 포함한 설명",
     "precautions": ["주의점1", "주의점2", "주의점3"],
     "management": {
-        "보습관리": "...",
-        "청결관리": "...",
-        "환경관리": "...",
-        "의복관리": "..."
+        "일상 관리법(가정에서의 피부 관리, 샤워법 등)": "",
+        "의학적 치료법(연고, 경구약, 물리치료 등)": "",
+        "생활습관(재발 방지법, 환경 개선법)": "",
+        "기타": ""
+    },
+    "출처": {
+        "기관명": "",
+        "출처url": ""
     }
 }"""
 
@@ -104,25 +106,31 @@ _prompt = ChatPromptTemplate.from_messages([
 ])
 
 
+def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str | None = None) -> Dict[str, Any]:
+    """이미지 바이트와 질병명을 받아 RAG + 이미지 분석 JSON 반환"""
+    retriever, model = _get_retriever_and_llm()
 
-def get_rag_chain():
-    """외부에서 호출할 수 있도록 Lazy RAG 체인을 반환"""
-    return _build_rag_chain()
+    logger.info("컨텍스트 문서를 검색합니다...")
+    docs = retriever.invoke(disease_name)
+    context_str = "\n".join([doc.page_content for doc in docs])
 
+    symptoms_text = symptoms if symptoms else "증상 정보 없음"
+    prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
-def generate_disease_info(disease_name: str) -> Dict[str, Any]:
-    """질병명을 입력받아 RAG 기반 JSON 정보를 반환"""
-    logger.info("RAG 체인을 가져옵니다...")
-    rag_chain = get_rag_chain()
-    
-    logger.info(f'RAG 체인 실행을 시작합니다. 질문: "{disease_name}"')
-    res = rag_chain.invoke(disease_name)
-    logger.info("RAG 체인 실행 완료. 응답을 파싱합니다...")
-    
-    import json
-    import re
+    logger.info("LLM 호출(이미지 + 텍스트) 시작...")
+    image = Image.open(io.BytesIO(image_bytes))
+    res = model.generate_content([prompt_str, image])
+    logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
-    text = res.content if hasattr(res, "content") else str(res)
+    import json, re
+    # Gemini SDK 응답에서 텍스트 추출
+    if hasattr(res, "text") and res.text:
+        text = res.text
+    elif getattr(res, "candidates", None):
+        first = res.candidates[0]
+        text = first.content.parts[0].text if first.content.parts else ""
+    else:
+        text = str(res)
 
     match = re.search(r"```json[\r\n]+([\s\S]*?)```", text)
     json_str = match.group(1) if match else text

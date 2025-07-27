@@ -397,6 +397,7 @@ async def generate_disease_info_stream(
     user_id: str = Form(...),
     disease_name: str = Form(...),
     image: UploadFile = File(...),
+    symptoms: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
     try:
@@ -412,7 +413,7 @@ async def generate_disease_info_stream(
         }
         
         return StreamingResponse(
-            generate_disease_info_stream_service(image_bytes, disease_name, user_id), 
+            generate_disease_info_stream_service(image_bytes, disease_name, symptoms, user_id), 
             media_type="text/event-stream",
             headers=headers
         )
