@@ -29,9 +29,9 @@ import os
 import logging
 from typing import Any, Dict
 
-from langchain_google_genai import ChatGoogleGenerativeAI
+import google.generativeai as genai
 from langchain.prompts import ChatPromptTemplate
-from langchain.schema.runnable import RunnableParallel, RunnablePassthrough
+
 from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 
 from services.firestore_vector import FirestoreVectorStore
@@ -62,23 +62,20 @@ def _get_retriever_and_llm():
     retriever = vector_store.as_retriever(k=4)
     logger.info("  - Retriever(문서 검색기)를 생성했습니다.")
 
-    # SecretStr가 하위 gRPC 라이브러리에서 문제를 일으키므로, .get_secret_value()로 일반 str을 추출합니다.
-    llm = ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro", 
-        temperature=0.2, 
-        google_api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY
-    )
-
-    logger.info("Retriever & LLM 초기화 완료.")
-    return retriever, llm
+    # google-generativeai 설정
+    genai.configure(api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY)
+    logger.info("Retriever 초기화 완료. LLM은 호출 시 생성")
+    return retriever
 
 # ---- Prompt ----
 _TEMPLATE = (
     "너는 피부과 전문의 AI 어시스턴트다. 제공된 참고 문서를 바탕으로 질문에 답해라.\n"
+    "이미지 분석 결과를 참고하여 질문에 답해라.\n"
+    "보고서 형식으로 답해라.\n"
     "문맥(참고 문서):\n{context}\n\n"
     "질문: {question}\n\n"
     "다음 JSON 형식으로만 대답해. 다른 설명은 금지.\n"
-    "{output_schema}"
+    "{output_schema}에 있는 모든 내용을 답해라"
 )
 
 _OUTPUT_SCHEMA = """{
@@ -109,7 +106,7 @@ _prompt = ChatPromptTemplate.from_messages([
 
 def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, Any]:
     """이미지 바이트와 질병명을 받아 RAG + 이미지 분석 JSON 반환"""
-    retriever, llm = _get_retriever_and_llm()
+    retriever = _get_retriever_and_llm()
 
     logger.info("컨텍스트 문서를 검색합니다...")
     docs = retriever.invoke(disease_name)
@@ -119,11 +116,20 @@ def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, An
 
     logger.info("LLM 호출(이미지 + 텍스트) 시작...")
     image = Image.open(io.BytesIO(image_bytes))
-    res = llm.invoke([prompt_str, image])
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
+    res = model.generate_content([prompt_str, image])
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
     import json, re
-    text = res.content if hasattr(res, "content") else str(res)
+    # Gemini SDK 응답에서 텍스트 추출
+    if hasattr(res, "text") and res.text:
+        text = res.text
+    elif getattr(res, "candidates", None):
+        first = res.candidates[0]
+        text = first.content.parts[0].text if first.content.parts else ""
+    else:
+        text = str(res)
+
     match = re.search(r"```json[\r\n]+([\s\S]*?)```", text)
     json_str = match.group(1) if match else text
 
@@ -134,5 +140,3 @@ def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, An
     except json.JSONDecodeError as e:
         logger.error(f"모델 응답에서 JSON 파싱 실패. 원본 응답: {text}")
         raise ValueError("모델 응답에서 JSON 파싱 실패") from e
-
-

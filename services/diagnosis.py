@@ -9,17 +9,10 @@ import base64
 import logging
 import asyncio
 import re
-from PIL import Image
-import io
-import google.generativeai as genai
 
 # RAG 파이프라인
 from services.rag import generate_disease_info
-from dotenv import load_dotenv
-import os
-load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-2.0-flash")
+
 
 logger = logging.getLogger(__name__)
 
@@ -205,8 +198,8 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         # 이미지 분석 결과 전송
         yield "data: " + json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False) + "\n\n"
 
-        # RAG 기반 정보 생성 (text_analysis_data 이미 준비됨)
-        yield "data: " + json.dumps({"type": "status", "data": "이미지 분석 중..."}, ensure_ascii=False) + "\n\n"
+        # 텍스트 기반 정보 스트리밍 시작 알림
+        yield "data: " + json.dumps({"type": "status", "data": "텍스트 정보 스트리밍..."}, ensure_ascii=False) + "\n\n"
 
 
 
