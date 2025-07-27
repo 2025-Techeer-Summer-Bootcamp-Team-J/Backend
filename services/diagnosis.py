@@ -173,7 +173,7 @@ def get_additional_info(db: Session, user_id: str, diagnosis_id: int) -> dict:
         logger.error(f"보조 정보 조회 중 오류: {e}")
         raise HTTPException(status_code=500, detail=f"보조 정보 조회 실패: {str(e)}")
 
-async def generate_disease_info_stream_service(image_bytes: bytes, disease_name: str, user_id: str):
+async def generate_disease_info_stream_service(image_bytes: bytes, disease_name: str, symptoms: str | None, user_id: str):
     """
     이미지와 질병명을 처리하여 질병 정보를 생성하고 SSE를 통해 스트리밍합니다.
     """
@@ -188,7 +188,7 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         yield "data: " + json.dumps({"type": "status", "data": "세부 정보 생성 중..."}, ensure_ascii=False) + "\n\n"
 
         loop = asyncio.get_event_loop()
-        combined_data = await loop.run_in_executor(None, generate_disease_info, image_bytes, disease_name)
+        combined_data = await loop.run_in_executor(None, generate_disease_info, image_bytes, disease_name, symptoms)
 
         image_analysis_data = combined_data.get("image_analysis", {})
         # text_analysis_data는 image_analysis를 제외한 나머지 필드

@@ -73,6 +73,7 @@ _TEMPLATE = (
     "이미지 분석 결과를 참고하여 질문에 답해라.\n"
     "보고서 형식으로 답해라.\n"
     "문맥(참고 문서):\n{context}\n\n"
+    "사용자 증상: {symptoms}\n\n"
     "질문: {question}\n\n"
     "다음 JSON 형식으로만 대답해. 다른 설명은 금지.\n"
     "{output_schema}에 있는 모든 내용을 답해라"
@@ -104,7 +105,7 @@ _prompt = ChatPromptTemplate.from_messages([
 ])
 
 
-def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, Any]:
+def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str | None = None) -> Dict[str, Any]:
     """이미지 바이트와 질병명을 받아 RAG + 이미지 분석 JSON 반환"""
     retriever = _get_retriever_and_llm()
 
@@ -112,7 +113,8 @@ def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, An
     docs = retriever.invoke(disease_name)
     context_str = "\n".join([doc.page_content for doc in docs])
 
-    prompt_str = _prompt.format(context=context_str, question=disease_name, output_schema=_OUTPUT_SCHEMA)
+    symptoms_text = symptoms if symptoms else "증상 정보 없음"
+    prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
     logger.info("LLM 호출(이미지 + 텍스트) 시작...")
     image = Image.open(io.BytesIO(image_bytes))
