@@ -191,7 +191,7 @@ def main() -> None:
         {
             "doc_id": doc["doc_id"],
             "disease_name": doc["disease_name"],
-            "url": doc.get("url", ""),
+            "url": doc["출처"]["url"],
         }
         for doc in docs_to_embed
     ]
