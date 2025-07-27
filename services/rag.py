@@ -64,8 +64,9 @@ def _get_retriever_and_llm():
 
     # google-generativeai 설정
     genai.configure(api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY)
-    logger.info("Retriever 초기화 완료. LLM은 호출 시 생성")
-    return retriever
+    model = genai.GenerativeModel("gemini-2.5-flash-lite")
+    logger.info("Retriever 및 LLM 초기화 완료.")
+    return retriever, model
 
 # ---- Prompt ----
 _TEMPLATE = (
@@ -107,7 +108,7 @@ _prompt = ChatPromptTemplate.from_messages([
 
 def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str | None = None) -> Dict[str, Any]:
     """이미지 바이트와 질병명을 받아 RAG + 이미지 분석 JSON 반환"""
-    retriever = _get_retriever_and_llm()
+    retriever, model = _get_retriever_and_llm()
 
     logger.info("컨텍스트 문서를 검색합니다...")
     docs = retriever.invoke(disease_name)
@@ -118,7 +119,6 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
 
     logger.info("LLM 호출(이미지 + 텍스트) 시작...")
     image = Image.open(io.BytesIO(image_bytes))
-    model = genai.GenerativeModel("gemini-2.5-flash-lite")
     res = model.generate_content([prompt_str, image])
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
