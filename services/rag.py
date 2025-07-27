@@ -23,7 +23,6 @@ def _to_str(val: str | SecretStr | None) -> str:
         return val.get_secret_value()
     return val or ""
 
-os.environ["GOOGLE_API_KEY"] = _to_str(os.getenv("GOOGLE_API_KEY"))
 os.environ["GEMINI_API_KEY"] = _to_str(os.getenv("GEMINI_API_KEY"))
 
 import os
@@ -38,14 +37,16 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 from services.firestore_vector import FirestoreVectorStore
 
 from functools import lru_cache
+from PIL import Image
+import io
 
 logger = logging.getLogger(__name__)
 
-# ---- Vector Store & RAG 체인 Lazy 생성 ----
+# ---- Retriever & LLM Lazy 생성 ----
 @lru_cache(maxsize=1)
-def _build_rag_chain():
-    """환경 변수를 확인하고 RAG 체인을 1회만 생성한다."""
-    logger.info("RAG 체인 생성을 시작합니다 (최초 1회 실행)...")
+def _get_retriever_and_llm():
+    """임베딩 Retriever와 Gemini LLM을 1회만 초기화해 재사용"""
+    logger.info("(once) Retriever & LLM 초기화합니다…")
     GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.")
@@ -68,14 +69,8 @@ def _build_rag_chain():
         google_api_key=GEMINI_API_KEY.get_secret_value() if hasattr(GEMINI_API_KEY, "get_secret_value") else GEMINI_API_KEY
     )
 
-    chain = (
-        RunnableParallel({"context": retriever, "question": RunnablePassthrough()})
-        | (lambda d: {"context": "\n".join([doc.page_content for doc in d["context"]]), "question": d["question"]})
-        | (lambda d: _prompt.format(**d, output_schema=_OUTPUT_SCHEMA))
-        | llm
-    )
-    logger.info("RAG 체인 생성을 완료했습니다.")
-    return chain
+    logger.info("Retriever & LLM 초기화 완료.")
+    return retriever, llm
 
 # ---- Prompt ----
 _TEMPLATE = (
@@ -87,10 +82,14 @@ _TEMPLATE = (
 )
 
 _OUTPUT_SCHEMA = """{
+    "image_analysis": {
+        "skin_score": "(예시: 1~100사이의 정수)",
+        "estimated_treatment_period": "(예시: 2-4주등 의 기간)"
+    },
     "disease_name": "질병명(한국어)",
     "photo_url": "신뢰할 수 있는 사이트의 사진 URL",
     "detailed_description": "정의|특징(증상)|원인을 포함한 설명",
-    "precautions": ["주의점1", "주의점2"],
+    "precautions": ["주의점1", "주의점2", "주의점3"],
     "management": {
         "일상 관리법(가정에서의 피부 관리, 샤워법 등)": "",
         "의학적 치료법(연고, 경구약, 물리치료 등)": "",
@@ -108,26 +107,23 @@ _prompt = ChatPromptTemplate.from_messages([
 ])
 
 
+def generate_disease_info(image_bytes: bytes, disease_name: str) -> Dict[str, Any]:
+    """이미지 바이트와 질병명을 받아 RAG + 이미지 분석 JSON 반환"""
+    retriever, llm = _get_retriever_and_llm()
 
-def get_rag_chain():
-    """외부에서 호출할 수 있도록 Lazy RAG 체인을 반환"""
-    return _build_rag_chain()
+    logger.info("컨텍스트 문서를 검색합니다...")
+    docs = retriever.invoke(disease_name)
+    context_str = "\n".join([doc.page_content for doc in docs])
 
+    prompt_str = _prompt.format(context=context_str, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
-def generate_disease_info(disease_name: str) -> Dict[str, Any]:
-    """질병명을 입력받아 RAG 기반 JSON 정보를 반환"""
-    logger.info("RAG 체인을 가져옵니다...")
-    rag_chain = get_rag_chain()
-    
-    logger.info(f'RAG 체인 실행을 시작합니다. 질문: "{disease_name}"')
-    res = rag_chain.invoke(disease_name)
-    logger.info("RAG 체인 실행 완료. 응답을 파싱합니다...")
-    
-    import json
-    import re
+    logger.info("LLM 호출(이미지 + 텍스트) 시작...")
+    image = Image.open(io.BytesIO(image_bytes))
+    res = llm.invoke([prompt_str, image])
+    logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
+    import json, re
     text = res.content if hasattr(res, "content") else str(res)
-
     match = re.search(r"```json[\r\n]+([\s\S]*?)```", text)
     json_str = match.group(1) if match else text
 
@@ -138,3 +134,5 @@ def generate_disease_info(disease_name: str) -> Dict[str, Any]:
     except json.JSONDecodeError as e:
         logger.error(f"모델 응답에서 JSON 파싱 실패. 원본 응답: {text}")
         raise ValueError("모델 응답에서 JSON 파싱 실패") from e
+
+

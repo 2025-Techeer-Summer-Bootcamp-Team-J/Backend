@@ -191,41 +191,24 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
     text_analysis_data = {}
     
     try:
-        # 1. 이미지 분석
-        yield "data: " + json.dumps({"type": "status", "data": "이미지 분석 중..."}, ensure_ascii=False) + "\n\n"
-
-        image_prompt = [
-            "Based on the skin condition in this image, provide ONLY a JSON object with 'skin_score' (integer 0-100), 'severity' (e.g., 경증, 중등도, 중증), and 'estimated_treatment_period' (e.g., 2-4주). Do not include any other text, explanations, or disclaimers. All responses must be in Korean.",
-            Image.open(io.BytesIO(image_bytes))
-        ]
-        
-        image_response = await model.generate_content_async(image_prompt)
-        
-        if not image_response.parts:
-            raise ValueError("이미지 분석 결과가 없습니다.")
-
-        # JSON 추출 및 파싱
-        response_text = image_response.text.strip()
-        json_match = re.search(r"```json\n([\s\S]*?)\n```", response_text)
-        if json_match:
-            response_text = json_match.group(1).strip()
-        
-        try:
-            image_analysis_data = json.loads(response_text)
-        except json.JSONDecodeError:
-            # 기본값 사용
-            image_analysis_data = {"skin_score": 0, "severity": "분석 불가", "estimated_treatment_period": "분석 불가"}
-        
-        yield "data: " + json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False) + "\n\n"
-
-
-        
-        # RAG 기반 정보 생성
+        # 1. 통합 RAG 호출 (이미지 + 텍스트)
         yield "data: " + json.dumps({"type": "status", "data": "세부 정보 생성 중..."}, ensure_ascii=False) + "\n\n"
 
-        # 동기 함수이므로 스레드 풀에서 실행
         loop = asyncio.get_event_loop()
-        text_analysis_data = await loop.run_in_executor(None, generate_disease_info, disease_name)
+        combined_data = await loop.run_in_executor(None, generate_disease_info, image_bytes, disease_name)
+
+        image_analysis_data = combined_data.get("image_analysis", {})
+        # text_analysis_data는 image_analysis를 제외한 나머지 필드
+        text_analysis_data = combined_data.copy()
+        text_analysis_data.pop("image_analysis", None)
+
+        # 이미지 분석 결과 전송
+        yield "data: " + json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False) + "\n\n"
+
+        # RAG 기반 정보 생성 (text_analysis_data 이미 준비됨)
+        yield "data: " + json.dumps({"type": "status", "data": "이미지 분석 중..."}, ensure_ascii=False) + "\n\n"
+
+
 
         # 스트리밍으로 각 섹션 전송
         sections = [
