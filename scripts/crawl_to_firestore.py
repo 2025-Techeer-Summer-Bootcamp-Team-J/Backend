@@ -28,11 +28,14 @@ from typing import Dict, List
 
 import requests
 from bs4 import BeautifulSoup  # type: ignore
+from dotenv import load_dotenv # noqa: E402
 
 # 내부 서비스 모듈 path 추가
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from services.disease_store import DiseaseStore  # noqa: E402
+from langchain_google_genai import GoogleGenerativeAIEmbeddings  # noqa: E402
+from services.firestore_vector import FirestoreVectorStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -44,13 +47,16 @@ USER_AGENT = (
 )
 HEADERS = {"User-Agent": USER_AGENT}
 
+
 def clean_text(html: str) -> str:
     """HTML → 깨끗한 텍스트로 단순 변환."""
     soup = BeautifulSoup(html, "html.parser")
-    # 스크립트, 스타일 제거
+
+    # script, style, noscript 태그 제거
     for tag in soup(["script", "style", "noscript"]):
         tag.decompose()
-    text = soup.get_text(separator="\n")
+    text = soup.get_text(separator="\n", strip=True)
+
     # 연속 공백 줄 정리
     text = re.sub(r"\n{2,}", "\n", text)
     return text.strip()
@@ -72,22 +78,36 @@ def extract_first_image_url(html: str, base_url: str | None = None) -> str:
     return src
 
 
-def crawl_page(url: str) -> Dict[str, str]:
+def crawl_page(url: str) -> Dict[str, str] | None:
     """url 의 HTML, main text, 대표 이미지 src 반환."""
-    resp = requests.get(url, headers=HEADERS, timeout=15)
-    resp.raise_for_status()
-    html = resp.text
-    text = clean_text(html)
-    photo_url = extract_first_image_url(html, base_url=url)
-    return {"html": html, "text": text, "photo_url": photo_url}
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        html = resp.text
+        text = clean_text(html)
+
+        # Firestore의 단일 문서 크기 제한(1MiB)을 초과하지 않도록 텍스트를 자릅니다.
+        # 1MiB = 1,048,576 bytes. 여유를 두어 900,000 바이트로 제한합니다.
+        max_bytes = 900000
+        if len(text.encode("utf-8")) > max_bytes:
+            logger.warning("크롤링한 텍스트가 너무 길어 자릅니다: %s", url)
+            # utf-8 멀티바이트 문자가 잘리지 않도록 디코딩 후 다시 인코딩하여 자릅니다.
+            text = text.encode("utf-8")[:max_bytes].decode("utf-8", "ignore")
+        photo_url = extract_first_image_url(html, base_url=url)
+        return {"html": html, "text": text, "photo_url": photo_url}
+    except requests.exceptions.RequestException as e:
+        logging.warning(f"크롤링 실패: {url} - {e}")
+        return None
 
 
-def process_row(row: Dict[str, str]) -> Dict[str, object]:
+def process_row(row: Dict[str, str]) -> Dict[str, object] | None:
     disease_name = row["disease_name"].strip()
     url = row["url"].strip()
     source_name = row.get("기관명", "") or row.get("source", "")
     logger.info("크롤링: %s (%s)", disease_name, url)
     page = crawl_page(url)
+    if not page:
+        return None  # 크롤링 실패 시 건너뛰기
 
     # 스키마 변환 (placeholder 필드 채우기)
     doc = {
@@ -130,12 +150,57 @@ def main() -> None:
     if not csv_path.exists():
         raise FileNotFoundError(csv_path)
 
+    # .env 파일에서 환경 변수 로드 (GEMINI_API_KEY)
+    load_dotenv()
+
     store = DiseaseStore()
 
     rows = load_csv(csv_path)
-    docs = [process_row(r) for r in rows]
-    store.add_documents(docs)
+    docs = [doc for r in rows if (doc := process_row(r)) is not None]
+    if not docs:
+        logger.info("저장할 문서가 없습니다.")
+        return
+
+    # 1. 질병 정보 저장
+    doc_ids = store.add_documents(docs)
+    # 각 문서 dict에 Firestore 문서 ID 주입
+    for doc, _id in zip(docs, doc_ids):
+        doc["doc_id"] = _id
     logger.info("업로드 완료: %d 건", len(docs))
+
+    # 2. 저장된 문서 내용으로 임베딩 생성 및 저장
+    logger.info("이제 저장된 문서들의 임베딩을 생성합니다...")
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    if not gemini_api_key:
+        raise ValueError("GEMINI_API_KEY 환경 변수를 찾을 수 없습니다.")
+
+    embedding_model = GoogleGenerativeAIEmbeddings(
+        model="models/embedding-001", google_api_key=gemini_api_key
+    )
+    vector_store = FirestoreVectorStore(embedding=embedding_model)
+    # 저장된 문서들 중, 임베딩할 내용(detailed_description)이 있는 것만 필터링
+    docs_to_embed = [doc for doc in docs if doc.get('detailed_description')]
+    if not docs_to_embed:
+        logger.warning("임베딩할 문서가 없습니다. 모든 문서의 detailed_description이 비어있습니다.")
+        return
+
+    logger.info(f"총 {len(docs)}개 문서 중 {len(docs_to_embed)}개의 문서에 대해 임베딩을 생성합니다.")
+
+    texts_to_embed = [doc['detailed_description'] for doc in docs_to_embed]
+    metadatas = [
+        {
+            "doc_id": doc["doc_id"],
+            "disease_name": doc["disease_name"],
+            "url": doc.get("url", ""),
+        }
+        for doc in docs_to_embed
+    ]
+    vector_store.add_texts(
+        texts=texts_to_embed,
+        metadatas=metadatas,
+        batch_size=5  # Gemini API 동시 요청 제한 고려
+    )
+    logger.info("임베딩 저장 완료: %d 건", len(texts_to_embed))
 
 
 if __name__ == "__main__":

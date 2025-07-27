@@ -37,27 +37,34 @@ class DiseaseStore:
     # ---------------------------------------------------------------------
     # 저장
     # ---------------------------------------------------------------------
-    def add_documents(self, docs: List[Dict[str, Any]]) -> List[str]:
+    def add_documents(self, docs: List[Dict[str, Any]], batch_size: int = 1) -> List[str]:
         """문서를 배치로 저장한다.
 
         Args:
             docs: 저장할 문서 리스트
+            batch_size: 한 번에 커밋할 문서 수
         Returns:
             저장된 document ID 리스트
         """
-        batch = self.client.batch()
-        ids: List[str] = []
-        for doc in docs:
-            doc_id = uuid.uuid4().hex
-            ids.append(doc_id)
-            # photo_url 분리
-            photo_url = doc.pop("photo_url", "")
-            batch.set(self.collection.document(doc_id), doc)
-            if photo_url:
-                batch.set(self.col_photos.document(doc_id), {"photo_url": photo_url})
-        batch.commit()
-        logger.info("DiseaseStore: %d개 문서를 저장했습니다", len(docs))
-        return ids
+        all_ids: List[str] = []
+        for i in range(0, len(docs), batch_size):
+            batch_docs = docs[i:i + batch_size]
+            batch = self.client.batch()
+
+            for doc in batch_docs:
+                doc_id = uuid.uuid4().hex
+                all_ids.append(doc_id)
+                # photo_url 분리
+                photo_url = doc.pop("photo_url", "")
+                batch.set(self.collection.document(doc_id), doc)
+                if photo_url:
+                    batch.set(self.col_photos.document(doc_id), {"photo_url": photo_url})
+
+            batch.commit()
+            logger.info("DiseaseStore: %d개 문서를 저장했습니다 (총 %d/%d)", len(batch_docs), i + len(batch_docs), len(docs))
+
+        logger.info("DiseaseStore: 총 %d개 문서를 저장 완료했습니다", len(docs))
+        return all_ids
 
     def add_document(self, doc: Dict[str, Any]) -> str:
         """단일 문서 저장"""

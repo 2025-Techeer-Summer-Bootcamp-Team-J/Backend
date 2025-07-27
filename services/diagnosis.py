@@ -192,7 +192,7 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
     
     try:
         # 1. 이미지 분석
-        yield f"data: {json.dumps({"type": "status", "data": "이미지 분석 중..."}, ensure_ascii=False)}\n\n"
+        yield "data: " + json.dumps({"type": "status", "data": "이미지 분석 중..."}, ensure_ascii=False) + "\n\n"
 
         image_prompt = [
             "Based on the skin condition in this image, provide ONLY a JSON object with 'skin_score' (integer 0-100), 'severity' (e.g., 경증, 중등도, 중증), and 'estimated_treatment_period' (e.g., 2-4주). Do not include any other text, explanations, or disclaimers. All responses must be in Korean.",
@@ -216,12 +216,12 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
             # 기본값 사용
             image_analysis_data = {"skin_score": 0, "severity": "분석 불가", "estimated_treatment_period": "분석 불가"}
         
-        yield f"data: {json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False)}\n\n"
+        yield "data: " + json.dumps({"type": "image_analysis", "data": image_analysis_data}, ensure_ascii=False) + "\n\n"
 
 
         
         # RAG 기반 정보 생성
-        yield f"data: {json.dumps({"type": "status", "data": "세부 정보 생성 중..."}, ensure_ascii=False)}\n\n"
+        yield "data: " + json.dumps({"type": "status", "data": "세부 정보 생성 중..."}, ensure_ascii=False) + "\n\n"
 
         # 동기 함수이므로 스레드 풀에서 실행
         loop = asyncio.get_event_loop()
@@ -240,48 +240,49 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
         
         for section_key, section_type in sections:
             if section_key in text_analysis_data:
-                yield f"data: {json.dumps({"type": f"{section_type}_start"}, ensure_ascii=False)}\n\n"
+                yield "data: " + json.dumps({"type": f"{section_type}_start"}, ensure_ascii=False) + "\n\n"
                 
                 section_data = text_analysis_data[section_key]
                 if isinstance(section_data, str):
                     # 문자열인 경우 청크로 나누어 전송
                     words = section_data.split()
                     for word in words:
-                        yield f"data: {json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False)}\n\n"
+                        yield "data: " + json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False) + "\n\n"
                         await asyncio.sleep(0.05)
                         
                 elif isinstance(section_data, list):
                     # 리스트인 경우 각 항목을 청크로 전송
                     for i, item in enumerate(section_data):
-                        yield f"data: {json.dumps({"type": f"{section_type}_item_start", "data": i}, ensure_ascii=False)}\n\n"
+                        yield "data: " + json.dumps({"type": f"{section_type}_item_start", "data": i}, ensure_ascii=False) + "\n\n"
                         for word in item.split():
-                            yield f"data: {json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False)}\n\n"
+                            yield "data: " + json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False) + "\n\n"
                             await asyncio.sleep(0.05)
-                        yield f"data: {json.dumps({"type": f"{section_type}_item_end"}, ensure_ascii=False)}\n\n"
+                        yield "data: " + json.dumps({"type": f"{section_type}_item_end"}, ensure_ascii=False) + "\n\n"
                         
                 elif isinstance(section_data, dict):
                     # 딕셔너리인 경우 키-값 쌍을 청크로 전송
                     for key, value in section_data.items():
-                        yield f"data: {json.dumps({"type": f"{section_type}_item_start", "data": key}, ensure_ascii=False)}\n\n"
+                        yield "data: " + json.dumps({"type": f"{section_type}_item_start", "data": key}, ensure_ascii=False) + "\n\n"
                         for word in value.split():
-                            yield f"data: {json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False)}\n\n"
+                            yield "data: " + json.dumps({"type": f"{section_type}_chunk", "data": word}, ensure_ascii=False) + "\n\n"
                             await asyncio.sleep(0.05)
-                        yield f"data: {json.dumps({"type": f"{section_type}_item_end"}, ensure_ascii=False)}\n\n"
+                        yield "data: " + json.dumps({"type": f"{section_type}_item_end"}, ensure_ascii=False) + "\n\n"
                 
-                yield f"data: {json.dumps({"type": f"{section_type}_end"}, ensure_ascii=False)}\n\n"
+                yield "data: " + json.dumps({"type": f"{section_type}_end"}, ensure_ascii=False) + "\n\n"
 
         # 완료 이벤트와 함께 저장용 데이터 전송
-        yield f"data: {json.dumps({
-            "type": "done", 
+        payload = json.dumps({
+            "type": "done",
             "save_data": {
                 "user_id": user_id,
                 "image_base64": image_base64,
                 "image_analysis": image_analysis_data,
                 "text_analysis": text_analysis_data
             }
-        }, ensure_ascii=False)}\n\n"
+        }, ensure_ascii=False)
+        yield f"data: {payload}\n\n"
 
     except Exception as e:
         logger.error(f"스트리밍 중 오류: {e}")
-        yield f"data: {json.dumps({"type": "error", "data": str(e)}, ensure_ascii=False)}\n\n"
+        yield "data: " + json.dumps({"type": "error", "data": str(e)}, ensure_ascii=False) + "\n\n"
 
