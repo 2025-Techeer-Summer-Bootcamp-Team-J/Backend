@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import os
 import logging
+
 import time
+
 from typing import Dict, List
 
 import requests
@@ -40,6 +42,7 @@ def bulk_search_scholar(query: str, limit: int = 100, *, min_citations: int | No
     params = {
         "query": query,
         "limit": min(limit, 100),
+
         "fields": "title,year",
     }
     if min_citations is not None and min_citations > 0:
@@ -56,6 +59,7 @@ def bulk_search_scholar(query: str, limit: int = 100, *, min_citations: int | No
     resp = requests.get(url, headers=headers, params=params, timeout=15)
     # 호출 후 타임스탬프 저장
     bulk_search_scholar._last_called_at = time.time()
+
     resp.raise_for_status()
     data = resp.json().get("data", [])
     data.sort(key=lambda x: x.get("citationCount", 0), reverse=True)
