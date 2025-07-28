@@ -4,7 +4,9 @@ from models.user import User
 from schema.user import UserRead, UserCreate
 
 def create_user(user_data: UserCreate, db: Session) -> User:
+        # user_id가 제공된 경우(clerk_id) 그대로 설정하고, 없으면 자동 생성
     db_user = User(
+        user_id=user_data.user_id,
         email=user_data.email,
         password=user_data.password,
         name=user_data.name,

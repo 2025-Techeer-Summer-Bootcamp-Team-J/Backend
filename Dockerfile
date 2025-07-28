@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # Python 3.11 slim 이미지 사용
+=======
+# Python 3.13.1 slim 이미지 사용
+>>>>>>> 6314ea1036eb3eddd11b4e8fc781b7c9005af1f3
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED 1

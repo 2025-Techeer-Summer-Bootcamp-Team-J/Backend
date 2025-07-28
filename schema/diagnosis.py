@@ -11,7 +11,7 @@ class DiagnosisBase(BaseModel):
 # --- DB에서 읽어올 때 사용할 스키마 (id 포함) ---
 class Diagnosis(DiagnosisBase):
     id: int
-    user_id: int
+    user_id: str
 
 class Config:
     from_attributes = True # SQLAlchemy 모델을 Pydantic 모델로 변환
@@ -24,7 +24,7 @@ class BoundingBox(BaseModel):
 
 class DiagnosisData(BaseModel):
     id: int  # diagnosis_id의 별칭으로 사용
-    user_id: int
+    user_id: str
     disease_name: Optional[str] = None  # 질환명 추가
     skin_type_id: Optional[int] = None
     confidence: Optional[int] = None  # 기존 expected_treat 대신 사용
@@ -59,7 +59,7 @@ class DiagnosisResponse(BaseModel):
 # --- 사용자 진단 조회를 위한 간단한 스키마 ---
 class UserDiagnosisSimple(BaseModel):
     id: int
-    user_id: int
+    user_id: str
     disease_name: str
     confidence: float
     
@@ -69,7 +69,7 @@ class UserDiagnosisSimple(BaseModel):
 # --- 사용자 진단 조회를 위한 기본 스키마 (질병명만) ---
 class UserDiagnosisBasic(BaseModel):
     id: int
-    user_id: int
+    user_id: str
     disease_name: str
     
     class Config:
@@ -90,8 +90,9 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
     try:
         return DiagnosisData(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', ''),
             skin_type_id=getattr(diagnosis_obj, 'skin_type_id', None),
+            disease_name=getattr(diagnosis_obj, 'disease_name', None),
             confidence=getattr(diagnosis_obj, 'confidence', None),
             image=getattr(diagnosis_obj, 'image', None),
             after=getattr(diagnosis_obj, 'after', None),
@@ -104,7 +105,7 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
         # 최소한의 기본값으로라도 반환
         return DiagnosisData(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', ''),
             skin_type_id=None,
             confidence=None,
             image=None,
@@ -170,7 +171,7 @@ def diagnosis_to_basic_schema(diagnosis_obj) -> UserDiagnosisBasic:
 
         return UserDiagnosisBasic(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', ''),
             disease_name=disease_name
         )
     except Exception as e:
@@ -178,7 +179,7 @@ def diagnosis_to_basic_schema(diagnosis_obj) -> UserDiagnosisBasic:
         # 최소한의 기본값으로라도 반환
         return UserDiagnosisBasic(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
+            user_id=getattr(diagnosis_obj, 'user_id', ''),
             disease_name="알 수 없음"
         )
 
@@ -235,7 +236,7 @@ class AdditionalInfoRequest(BaseModel):
 class AdditionalInfoResponse(BaseModel):
     """보조 정보 조회 응답 스키마"""
     diagnosis_id: int
-    user_id: int
+    user_id: str
     main_symptoms: List[str]
     itching_level: Optional[int]
     symptom_duration: Optional[str]

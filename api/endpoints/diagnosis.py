@@ -14,12 +14,44 @@ import os
 from services.diagnosis import delete_diagnosis, save_diagnosis_data, save_additional_info, get_additional_info
 from fastapi.responses import StreamingResponse
 from services.diagnosis import generate_disease_info_stream_service
-from schema.diagnosis_save import SaveDiagnosisRequest, SaveDiagnosisResponse, SavedDiagnosisResponse
+from schema.diagnosis_save import SaveDiagnosisResponse, SavedDiagnosisResponse
+from crud.storage import upload_image
+from schema.ResultResponseModel import ResultResponseModel
 
 router = APIRouter(
     prefix="/diagnoses",
     tags=["diagnoses"]
 )
+
+# <<< 진단 이미지 조회 API >>>
+@router.get("/{diagnosis_id}/image", summary="진단 이미지 조회", description="진단 ID로 진단 시 사용한 이미지를 조회합니다.")
+async def get_diagnosis_image(
+    diagnosis_id: int,
+    db: Session = Depends(get_db)
+):
+    """
+    진단 ID로 진단 시 사용한 이미지를 조회합니다.
+    """
+    try:
+        diagnosis = db.query(Diagnosis).filter(
+            Diagnosis.diagnosis_id == diagnosis_id,
+            Diagnosis.is_deleted == False
+        ).first()
+
+        if not diagnosis:
+            raise HTTPException(status_code=404, detail="진단 정보를 찾을 수 없습니다")
+
+        # image URL이 None이면 예외 처리
+        if not diagnosis.image:
+            raise HTTPException(status_code=404, detail="해당 진단에 저장된 이미지가 없습니다")
+
+        return ResultResponseModel(status_code=200, message="이미지 조회 성공", data={"image_url": diagnosis.image})
+
+    except HTTPException as e:
+        # HTTPException은 그대로 전달
+        raise e
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"이미지 조회 중 오류가 발생했습니다: {str(e)}")
 
 # <<< 비동기 진단 요청 API >>>
 @router.post("",
@@ -27,7 +59,7 @@ router = APIRouter(
              summary="비동기 진단 요청",
              description="이미지를 업로드하여 비동기 진단을 요청합니다")
 async def create_diagnosis_async(
-    user_id: int = Form(...),
+    user_id: str = Form(...),
     file: UploadFile = File(...),
 ):
     """
@@ -186,7 +218,7 @@ def get_task_status(task_id: str):
              description="이미지를 업로드하여 동기 진단을 요청합니다. 같은 질환명의 신뢰도를 합쳐서 100분위로 정규화하여 반환합니다.")
 async def create_diagnosis_sync(
     request: Request,
-    user_id: int = Form(...), 
+    user_id: str = Form(...), 
     file: UploadFile = File(...), 
     db: Session = Depends(get_db)
 ):
@@ -247,7 +279,7 @@ async def create_diagnosis_sync(
         )
 
 @router.get("/users/{user_id}/diagnoses", response_model=UserDiagnosisBasicResponse, summary="유저 모든 진단 조회", description="유저 모든 진단 목록을 조회합니다")
-def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
+def read_user_diagnoses(user_id: str, db: Session = Depends(get_db)):
     try:
         # user_id 유효성 검사 - 0보다 큰 양수여야 함
         if user_id <= 0:
@@ -293,7 +325,7 @@ def read_user_diagnoses(user_id: int, db: Session = Depends(get_db)):
         )
 
 @router.delete("/{diagnosis_id}", summary="진단 삭제", description="진단 정보를 삭제합니다")
-def delete_user_diagnosis(user_id: int, diagnosis_id: int, db: Session = Depends(get_db)):
+def delete_user_diagnosis(user_id: str, diagnosis_id: int, db: Session = Depends(get_db)):
 
     deleted_diagnosis = delete_diagnosis(db, user_id, diagnosis_id)
 
@@ -342,6 +374,7 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
             "diagnosis_id": diagnosis.diagnosis_id,
             "user_id": diagnosis.user_id,
             "image_base64": diagnosis.image or "",
+            "disease_name": diagnosis.disease_name,
             "image_analysis": detailed_info.get("image_analysis", {}),
             "text_analysis": detailed_info.get("text_analysis", {}),
             "diseases": diseases_data
@@ -361,9 +394,10 @@ def get_diagnosis_details(diagnosis_id: int, db: Session = Depends(get_db)):
 # <<< 질병 정보 스트리밍 생성 API >>>
 @router.post("/generate-stream", summary="질병 정보 스트리밍 생성", description="사진과 질병명을 받아 SSE로 상세 정보를 스트리밍합니다. 스트리밍이 완료되면 자동으로 데이터베이스에 저장됩니다.")
 async def generate_disease_info_stream(
-    user_id: int = Form(...),
+    user_id: str = Form(...),
     disease_name: str = Form(...),
     image: UploadFile = File(...),
+    symptoms: str | None = Form(None),
     db: Session = Depends(get_db)
 ):
     try:
@@ -379,7 +413,7 @@ async def generate_disease_info_stream(
         }
         
         return StreamingResponse(
-            generate_disease_info_stream_service(image_bytes, disease_name, user_id), 
+            generate_disease_info_stream_service(image_bytes, disease_name, symptoms, user_id), 
             media_type="text/event-stream",
             headers=headers
         )
@@ -394,28 +428,35 @@ async def generate_disease_info_stream(
              summary="진단 결과 저장",
              description="스트리밍 완료 후 진단 결과 데이터를 데이터베이스에 저장합니다")
 async def save_diagnosis_result(
-    request: SaveDiagnosisRequest,
+    user_id: str,
+    image: UploadFile = File(...),
+    image_analysis: str = Form(...),
+    text_analysis: str = Form(...),
+    disease_name: str = Form(...),
     db: Session = Depends(get_db)
 ):
     """
     스트리밍 완료 후 진단 결과 데이터를 저장합니다.
     """
     try:
+        image_analysis_dict = json.loads(image_analysis)
+        text_analysis_dict = json.loads(text_analysis)
+        image_file = image
+        image_url = await upload_image(image_file)
+        
         diagnosis = save_diagnosis_data(
             db=db,
-            user_id=request.user_id,
-            image_base64=request.image_base64,
-            image_analysis_data=request.image_analysis,
-            text_analysis_data=request.text_analysis
+            user_id=user_id,
+            image=image_url,
+            image_analysis_data=image_analysis_dict,
+            text_analysis_data=text_analysis_dict,
+            disease_name=disease_name
         )
         
         return SaveDiagnosisResponse(
             diagnosis_id=diagnosis.diagnosis_id,
             message="진단 결과가 성공적으로 저장되었습니다."
         )
-        
-    except HTTPException as e:
-        raise e
     except Exception as e:
         raise HTTPException(
             status_code=500,
@@ -501,7 +542,7 @@ async def save_diagnosis_additional_info(
             description="특정 진단의 보조 정보를 조회합니다")
 async def get_diagnosis_additional_info(
     diagnosis_id: int,
-    user_id: int,  # Query parameter로 받거나 JWT에서 추출
+    user_id: str,  # Query parameter로 받거나 JWT에서 추출
     db: Session = Depends(get_db)
 ):
     """
