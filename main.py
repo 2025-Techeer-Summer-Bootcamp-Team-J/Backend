@@ -53,7 +53,7 @@ app = FastAPI()
 # CORS 미들웨어 설정 - 프론트엔드에서 백엔드로 요청 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 개발환경용 - 운영시에는 구체적인 도메인 지정
+    allow_origins=["https://www.ppikkappeonjjeog.life/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -75,9 +75,3 @@ app.conf.task_default_queue = 'default'
 app.conf.task_default_exchange = 'default'
 app.conf.task_default_routing_key = 'default'
 
-
-<<<<<<< HEAD
-# logger.info("Current Celery Beat schedule: %s", app.conf.beat_schedule)
-=======
-# logger.info("Current Celery Beat schedule: %s", app.conf.beat_schedule)
->>>>>>> develop
