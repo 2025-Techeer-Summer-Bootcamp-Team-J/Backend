@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import os
 import logging
+
+import time
+
 from typing import Dict, List
 
 import requests
@@ -39,12 +42,24 @@ def bulk_search_scholar(query: str, limit: int = 100, *, min_citations: int | No
     params = {
         "query": query,
         "limit": min(limit, 100),
-        "fields": "title,openAccessPdf,year,citationCount",
+
+        "fields": "title,year",
     }
     if min_citations is not None and min_citations > 0:
         params["minCitationCount"] = min_citations
+    # --- 간단한 Rate Limit: 초당 1회 ---
+    last_called_at: float = getattr(bulk_search_scholar, "_last_called_at", 0.0)
+    elapsed = time.time() - last_called_at
+    if elapsed < 1.0:
+        sleep_sec = 1.0 - elapsed
+        logger.debug("Rate limiting: %.2f초 대기", sleep_sec)
+        time.sleep(sleep_sec)
+
     logger.info("Semantic Scholar API 호출: %s (limit=%d)", query, params["limit"])
     resp = requests.get(url, headers=headers, params=params, timeout=15)
+    # 호출 후 타임스탬프 저장
+    bulk_search_scholar._last_called_at = time.time()
+
     resp.raise_for_status()
     data = resp.json().get("data", [])
     data.sort(key=lambda x: x.get("citationCount", 0), reverse=True)
