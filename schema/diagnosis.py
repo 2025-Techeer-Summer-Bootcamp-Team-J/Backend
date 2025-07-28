@@ -24,11 +24,7 @@ class BoundingBox(BaseModel):
 
 class DiagnosisData(BaseModel):
     id: int  # diagnosis_id의 별칭으로 사용
-<<<<<<< HEAD
-    user_id: int
-=======
     user_id: str
->>>>>>> develop
     disease_name: Optional[str] = None  # 질환명 추가
     skin_type_id: Optional[int] = None
     confidence: Optional[int] = None  # 기존 expected_treat 대신 사용
@@ -63,19 +59,13 @@ class DiagnosisResponse(BaseModel):
 # --- 사용자 진단 조회를 위한 간단한 스키마 ---
 class UserDiagnosisSimple(BaseModel):
     id: int
-<<<<<<< HEAD
-    user_id: int
-=======
     user_id: str
->>>>>>> develop
     disease_name: str
     confidence: float
     
     class Config:
         from_attributes = True
 
-<<<<<<< HEAD
-=======
 # --- 사용자 진단 조회를 위한 기본 스키마 (질병명만) ---
 class UserDiagnosisBasic(BaseModel):
     id: int
@@ -85,33 +75,24 @@ class UserDiagnosisBasic(BaseModel):
     class Config:
         from_attributes = True
 
->>>>>>> develop
 class UserDiagnosisResponse(BaseModel):
     code: int
     message: str
     data: List[UserDiagnosisSimple]
 
-<<<<<<< HEAD
-=======
 class UserDiagnosisBasicResponse(BaseModel):
     code: int
     message: str
     data: List[UserDiagnosisBasic]
 
->>>>>>> develop
 def box_to_schema(diagnosis_obj) -> DiagnosisData:
     """Diagnosis 모델 객체를 DiagnosisData 스키마로 변환"""
     try:
         return DiagnosisData(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-<<<<<<< HEAD
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
-            skin_type_id=getattr(diagnosis_obj, 'skin_type_id', None),
-=======
             user_id=getattr(diagnosis_obj, 'user_id', ''),
             skin_type_id=getattr(diagnosis_obj, 'skin_type_id', None),
             disease_name=getattr(diagnosis_obj, 'disease_name', None),
->>>>>>> develop
             confidence=getattr(diagnosis_obj, 'confidence', None),
             image=getattr(diagnosis_obj, 'image', None),
             after=getattr(diagnosis_obj, 'after', None),
@@ -124,11 +105,7 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
         # 최소한의 기본값으로라도 반환
         return DiagnosisData(
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-<<<<<<< HEAD
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
-=======
             user_id=getattr(diagnosis_obj, 'user_id', ''),
->>>>>>> develop
             skin_type_id=None,
             confidence=None,
             image=None,
@@ -138,13 +115,8 @@ def box_to_schema(diagnosis_obj) -> DiagnosisData:
             is_deleted=False
         )
 
-<<<<<<< HEAD
-def diagnosis_to_simple_schema(diagnosis_obj) -> UserDiagnosisSimple:
-    """Diagnosis 모델 객체를 UserDiagnosisSimple 스키마로 변환"""
-=======
 def diagnosis_to_simple_schema(diagnosis_obj) -> SimplifiedDiagnosisData:
     """Diagnosis 모델 객체를 SimplifiedDiagnosisData 스키마로 변환"""
->>>>>>> develop
     try:
         # disease_name 가져오기 - 첫 번째 연관된 질병의 이름을 사용
         disease_name = "알 수 없음"
@@ -156,13 +128,6 @@ def diagnosis_to_simple_schema(diagnosis_obj) -> SimplifiedDiagnosisData:
         if confidence is None:
             confidence = 0
             
-<<<<<<< HEAD
-        return UserDiagnosisSimple(
-            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
-            disease_name=disease_name,
-            confidence=float(confidence)
-=======
         image_base64 = getattr(diagnosis_obj, 'image', None)
         if image_base64 is None:
             image_base64 = ""
@@ -171,18 +136,10 @@ def diagnosis_to_simple_schema(diagnosis_obj) -> SimplifiedDiagnosisData:
             disease_name=disease_name,
             confidence=float(confidence),
             image=image_base64
->>>>>>> develop
         )
     except Exception as e:
         print(f"간단한 진단 데이터 변환 중 오류 발생: {e}")
         # 최소한의 기본값으로라도 반환
-<<<<<<< HEAD
-        return UserDiagnosisSimple(
-            id=getattr(diagnosis_obj, 'diagnosis_id', 0),
-            user_id=getattr(diagnosis_obj, 'user_id', 0),
-            disease_name="알 수 없음",
-            confidence=0.0
-=======
         return SimplifiedDiagnosisData(
             disease_name="알 수 없음",
             confidence=0.0,
@@ -224,7 +181,6 @@ def diagnosis_to_basic_schema(diagnosis_obj) -> UserDiagnosisBasic:
             id=getattr(diagnosis_obj, 'diagnosis_id', 0),
             user_id=getattr(diagnosis_obj, 'user_id', ''),
             disease_name="알 수 없음"
->>>>>>> develop
         )
 
 def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[SimplifiedDiagnosisData]:
@@ -268,8 +224,6 @@ def aggregate_and_normalize_diagnoses(predictions, image_base64: str) -> List[Si
     # 신뢰도 순으로 정렬 (높은 순)
     result.sort(key=lambda x: x.confidence, reverse=True)
     return result
-<<<<<<< HEAD
-=======
 
 # --- 진단 보조 정보 스키마 ---
 class AdditionalInfoRequest(BaseModel):
@@ -298,6 +252,4 @@ class AdditionalInfoSuccessResponse(BaseModel):
     code: int
     message: str
     data: Optional[AdditionalInfoResponse] = None
->>>>>>> develop
     
-
