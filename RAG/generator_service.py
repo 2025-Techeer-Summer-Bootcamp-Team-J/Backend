@@ -158,23 +158,17 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
     # ---- 프롬프트 구성 ----
     prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
-    # 이미지 리사이즈 및 해시 계산
+    # 이미지 해시 계산 (리사이즈 없이 원본 그대로 사용)
     image = Image.open(io.BytesIO(image_bytes))
-    image = _resize_image_to_512(image)
-    img_bytes_resized = io.BytesIO()
-    image.save(img_bytes_resized, format="PNG")
-    img_hash_val = _image_hash(img_bytes_resized.getvalue())
+    img_hash_val = _image_hash(image_bytes)
 
-    # ---- LLM 응답 캐싱 ----
-    cached = _cached_llm_response(img_hash_val, disease_name, symptoms_text)
-    if cached:
-        return cached
 
-    # 캐시 미스 시 실제 호출 (텍스트-only 분기 포함)
+    # ---- LLM 호출 ----
     if symptoms_text.strip() == "증상 정보 없음":
         res = model.generate_content(prompt_str)
     else:
         res = model.generate_content([prompt_str, image])
+
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
     import json, re
