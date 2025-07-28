@@ -142,6 +142,8 @@ uv.lock
 # Rope project settings
 .ropeproject
 
+ngrok.*
+
 # mkdocs documentation
 /site
 
@@ -181,3 +183,11 @@ pyrightconfig.json
 # End of https://www.toptal.com/developers/gitignore/api/python
 
 .idea/
+
+
+credentials/*.json
+
+celerybeat-schedule
+
+celerybeat-schedule-shm 
+celerybeat-schedule-wal

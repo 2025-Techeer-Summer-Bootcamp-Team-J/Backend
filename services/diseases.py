@@ -1,7 +1,28 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from models.diseases import Disease
-from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseDelete, DiseaseRead
+from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseRead
+import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+import json
+import asyncio
+from PIL import Image
+import io
+import logging
+import re # Import the re module
+
+load_dotenv()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+model = genai.GenerativeModel("gemini-1.5-flash-latest")
+
+
+
 
 def get_all_diseases_name(db: Session):
     diseases = db.query(Disease.disease_name).filter(Disease.is_deleted == False).all()
@@ -24,17 +45,14 @@ def create_disease(db: Session, disease: DiseaseCreate):
     return DiseaseRead.model_validate(new_disease)
 
 def delete_disease(db: Session, disease_id: int):
-    disease = db.query(Disease).filter(Disease.disease_id == disease_id).first()
+    disease = db.query(Disease).filter(Disease.disease_id == disease_id, Disease.is_deleted == False).first()
     if not disease:
         raise HTTPException(status_code=404, detail="질병 정보가 없습니다")
     
-    # 삭제 전에 Pydantic 스키마로 변환
     disease_data = DiseaseRead.model_validate(disease)
     
-    disease.diagnoses.clear()
-    disease.skintypes.clear()
-
-    db.delete(disease)
+    # Soft delete: is_deleted를 True로 설정
+    disease.is_deleted = True
     db.commit()
     return disease_data
 
@@ -52,7 +70,8 @@ def update_disease(db: Session, disease_id: int, disease_update: DiseaseUpdate):
     return DiseaseRead.model_validate(db_disease)
 
 def get_disease_by_id(db: Session, disease_id: int):
-    disease = db.query(Disease).filter(Disease.disease_id == disease_id).first()
+    disease = db.query(Disease).filter(Disease.disease_id == disease_id, Disease.is_deleted == False).first()
     if not disease:
         raise HTTPException(status_code=404, detail="질병 정보가 없습니다")
-    return DiseaseRead.model_validate(disease)   
+    return DiseaseRead.model_validate(disease)
+

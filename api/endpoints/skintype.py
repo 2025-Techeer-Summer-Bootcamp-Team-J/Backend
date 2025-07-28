@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from fastapi import Depends
 from database.database import get_db
 
-router = APIRouter(prefix="/skintype", tags=["skintype"])
+router = APIRouter(prefix="/skintypes", tags=["skintype"])
 
 @router.get("", summary="모든 skintype 조회", description="모든 skintype 목록을 조회합니다")
 def get_skintype(db: Session = Depends(get_db)):
@@ -18,9 +18,9 @@ def get_skintype_by_id(skintype_id: int, db: Session = Depends(get_db)):
     return ResultResponseModel(status_code=200, message="success", data=response_data)
 
 
-@router.post("/{user_id}/analysis", summary="피부 유형 분석", description="얼굴 사진을 업로드하여 피부 유형을 분석합니다")
+@router.post("/users/{user_id}/image", summary="피부 유형 분석", description="얼굴 사진을 업로드하여 피부 유형을 분석합니다")
 async def create_skintype_analysis(
-    user_id: int,
+    user_id: str,
     image: UploadFile = File(..., description="분석할 얼굴 사진 (JPG/JPEG, 최대 2MB)"),
     db: Session = Depends(get_db)
     ):

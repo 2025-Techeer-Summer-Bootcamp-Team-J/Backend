@@ -46,6 +46,9 @@ services:
     volumes:
       - .:/app
       - /app/__pycache__
+      - ./credentials/summerbootcamp-d4f6ec4850e7.json:/app/credentials/summerbootcamp-d4f6ec4850e7.json
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/summerbootcamp-d4f6ec4850e7.json
     env_file:
       - .env
     restart: unless-stopped
@@ -128,9 +131,13 @@ services:
   celery:
     build: .
     container_name: celery
-    command: celery -A config.celery worker --loglevel=info
+    command: celery -A config.celery.app worker --loglevel=info
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/summerbootcamp-d4f6ec4850e7.json
     volumes:
       - .:/app
+      - /app/__pycache__
+      - ./credentials/summerbootcamp-d4f6ec4850e7.json:/app/credentials/summerbootcamp-d4f6ec4850e7.json
     networks:
       - backend-network
     depends_on:
@@ -143,8 +150,18 @@ services:
       retries: 5
       start_period: 10s
 
-
-# 프로메테우스 메트릭 수집
+  celery-beat:
+    build: .
+    container_name: celery-beat
+    command: celery -A config.celery.app beat --loglevel=info
+    volumes:
+      - .:/app
+    networks:
+      - backend-network
+    depends_on:
+      - redis
+      - rabbitmq
+    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest

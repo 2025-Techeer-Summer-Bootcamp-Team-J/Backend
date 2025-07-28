@@ -121,7 +121,7 @@ async def fetch_korea_uv_range() -> UVIndexResponse:
         return UVIndexResponse(
             location="대한민국",
             date=current_time,
-            today=f"{min_uv}~{max_uv}" if min_uv != max_uv else str(min_uv)
+            now=f"{min_uv}~{max_uv}" if min_uv != max_uv else str(min_uv) # today 대신 now 사용
         )
         
     except HTTPException:

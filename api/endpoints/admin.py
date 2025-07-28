@@ -1,7 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, responses
 from sqlalchemy.orm import Session
 from schema.ResultResponseModel import ResultResponseModel
 from services.diseases import create_disease as create_disease_service, delete_disease as delete_disease_service, update_disease as update_disease_service, get_disease_table as get_disease_table
+from services.firestore_example import firestore_demo
+from services.picture_merge import overlay_image
 from services.skintype import create_skintype as create_skintype_service, delete_skintype as delete_skintype_service, update_skintype as update_skintype_service, get_skintype_table as get_skintype_table
 from schema.diseases import DiseaseCreate, DiseaseUpdate, DiseaseRead
 from schema.skintype import SkinTypeCreate, SkinTypeUpdate, SkinTypeRead
@@ -62,3 +64,44 @@ def delete_skintype(skin_type_id: int, db: Session = Depends(get_db)):
 def get_diagnosis(db: Session = Depends(get_db)):
     response=get_diagnosis_table(db)
     return ResultResponseModel(status_code=200, message="진단 테이블 조회 성공", data=response)
+
+
+@router.get("/merge_test")
+def merge_test():
+    try:
+        overlay_image(
+        base_path="input/original.jpg",
+        overlay_paths=[
+            "output/red_area.jpg",
+            "output/water_area.jpg",
+            "output/texture_enhanced_lines.jpg"
+        ],
+        save_path="output/skin_analysis_overlay.jpg",
+        alpha=100  # 투명도 (0~255)
+        )
+        return
+    except Exception as e:
+        raise HTTPException(400,f"{e}")
+
+@router.get("/skin_score_graph_test")
+def skin_score_graph_test():
+    from services.skin_score_graph import plot_score_radar
+    import json
+    try:
+        with open("output/response_json.txt", "r", encoding="utf-8") as f:
+            data = json.load(f)
+        result = data["result"]
+        score_info = result["score_info"]
+        print("score_info: ",score_info)
+        plot_score_radar(score_info)
+        return {"message": "그래프가 성공적으로 출력되었습니다."}
+    except Exception as e:
+        raise  HTTPException(400,f"{e}")
+
+@router.get("/fire_store_test")
+def fire_store_test():
+    try:
+        firestore_demo()
+    except Exception as e:
+        raise HTTPException(400,f'{e}')
+    return responses.Response(status_code=200)
