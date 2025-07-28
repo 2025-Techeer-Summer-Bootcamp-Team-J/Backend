@@ -14,7 +14,7 @@ OUTPUT_SCHEMA: str = """{
         "estimated_treatment_period": "(예시: 2-4주등 의 기간)"
     },
     "disease_name": "질병명(한국어)",
-    "photo_url": "신뢰할 수 있는 사이트의 사진 URL",
+    "photo_url": "신뢰할 수 있는 사이트의 사진 URL(3개)",
     "detailed_description": "정의|특징(증상)|원인을 포함한 설명",
     "precautions": ["주의점1", "주의점2", "주의점3"],
     "management": {
