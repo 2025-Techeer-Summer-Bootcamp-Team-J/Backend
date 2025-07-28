@@ -13,6 +13,7 @@ docker compose exec backend python -m scripts.clear_firestore_collection
 import logging
 
 from google.cloud import firestore
+from crud.firestore import get_firestore_client
 
 # 로깅 설정
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -48,7 +49,7 @@ def delete_collection(db: firestore.Client, collection_name: str, batch_size: in
 
 def main():
     """메인 실행 함수"""
-    db = firestore.Client()
+    db = get_firestore_client()
     
     # 크롤링된 원본 문서가 저장되는 컬렉션
     DOCUMENTS_COLLECTION = "documents"
