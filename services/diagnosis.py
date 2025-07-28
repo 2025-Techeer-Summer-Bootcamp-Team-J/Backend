@@ -11,7 +11,7 @@ import asyncio
 import re
 
 # RAG 파이프라인
-from services.rag import generate_disease_info
+from RAG.generator_service import generate_disease_info
 
 
 logger = logging.getLogger(__name__)

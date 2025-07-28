@@ -38,7 +38,7 @@ from crud.firestore import (
     set_document,
     update_document,
 )
-from services.rag import generate_disease_info
+from RAG.generator_service import generate_disease_info
 
 
 # ---------------- Firestore 데모 ----------------
