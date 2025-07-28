@@ -31,11 +31,32 @@ from RAG.vector_store import FirestoreVectorStore
 from functools import lru_cache
 from PIL import Image
 import io
+import re
 
 # RAG prompt & schema
 from RAG.prompt import OUTPUT_SCHEMA as _OUTPUT_SCHEMA, PROMPT as _prompt
 
 logger = logging.getLogger(__name__)
+
+# ---- 유틸 함수 ----
+
+def _clean_context(context: str, max_chars: int = 4000) -> str:
+    """Markdown 헤더·공백 제거 후 최대 길이로 자르기"""
+    # 헤더 제거
+    cleaned = re.sub(r"^#+ .*", "", context, flags=re.MULTILINE)
+    # 공백 줄 2개 이상 → 1개
+    cleaned = re.sub(r"\n{2,}", "\n", cleaned)
+    return cleaned[:max_chars]
+
+
+def _resize_image_to_512(image: Image.Image) -> Image.Image:
+    """가장 긴 변을 512px로 리사이즈 (PIL 이미지 반환)"""
+    w, h = image.size
+    if max(w, h) <= 512:
+        return image
+    ratio = 512 / max(w, h)
+    new_size = (int(w * ratio), int(h * ratio))
+    return image.resize(new_size, Image.LANCZOS)
 
 # ---- Retriever & LLM Lazy 생성 ----
 @lru_cache(maxsize=1)
@@ -72,14 +93,22 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
 
     logger.info("컨텍스트 문서를 검색합니다...")
     docs = retriever.invoke(disease_name)
-    context_str = "\n".join([doc.page_content for doc in docs])
+    raw_context = "\n".join([doc.page_content for doc in docs])
+    context_str = _clean_context(raw_context)
 
     symptoms_text = symptoms if symptoms else "증상 정보 없음"
     prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
     logger.info("LLM 호출(이미지 + 텍스트) 시작...")
+    # 이미지 리사이즈
     image = Image.open(io.BytesIO(image_bytes))
-    res = model.generate_content([prompt_str, image])
+    image = _resize_image_to_512(image)
+
+    # 증상 텍스트가 없으면 텍스트-only 호출로 분기
+    if symptoms_text.strip() == "증상 정보 없음":
+        res = model.generate_content(prompt_str)
+    else:
+        res = model.generate_content([prompt_str, image])
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
     import json, re
