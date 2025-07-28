@@ -30,6 +30,7 @@ OUTPUT_SCHEMA: str = """{
 }"""
 
 PROMPT_TEMPLATE: str = (
+    
     "너는 피부과 전문의 AI 어시스턴트다. 제공된 참고 문서를 바탕으로 질문에 답해라.\n"
     "이미지 분석 결과를 참고하여 질문에 답해라.\n"
     "보고서 형식으로 답해라.\n"
@@ -37,6 +38,7 @@ PROMPT_TEMPLATE: str = (
     "사용자 증상: {symptoms}\n\n"
     "질문: {question}\n\n"
     "다음 JSON 형식으로만 대답해. 다른 설명은 금지.\n"
+    "답변할때 null은 금지\n"
     "{output_schema}에 있는 모든 내용을 답해라"
 )
 
