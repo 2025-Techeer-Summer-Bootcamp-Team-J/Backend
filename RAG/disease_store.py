@@ -21,6 +21,7 @@ import logging
 from typing import Any, Dict, List
 
 from google.cloud import firestore  # type: ignore
+from crud.firestore import get_firestore_client
 
 logger = logging.getLogger(__name__)
 
@@ -29,16 +30,16 @@ class DiseaseStore:
     """Firestore 래퍼 클래스"""
 
     def __init__(self, collection_name: str = "diseases") -> None:
-        self.client = firestore.Client()
+        self.client = get_firestore_client()
         self.collection = self.client.collection(collection_name)
         # 사진 전용 컬렉션
         self.col_photos = self.client.collection("disease_photos")
 
-    # ---------------------------------------------------------------------
-    # 저장
-    # ---------------------------------------------------------------------
+
+
+    # ---------------------------- 저장 ---------------------------
     def add_documents(self, docs: List[Dict[str, Any]], batch_size: int = 1) -> List[str]:
-        """문서를 배치로 저장한다.
+        """여러 질병 문서를 배치로 저장합니다.
 
         Args:
             docs: 저장할 문서 리스트
@@ -61,13 +62,11 @@ class DiseaseStore:
                     batch.set(self.col_photos.document(doc_id), {"photo_url": photo_url})
 
             batch.commit()
-            logger.info("DiseaseStore: %d개 문서를 저장했습니다 (총 %d/%d)", len(batch_docs), i + len(batch_docs), len(docs))
-
-        logger.info("DiseaseStore: 총 %d개 문서를 저장 완료했습니다", len(docs))
+            logger.info("DiseaseStore: 총 %d개 문서를 저장 완료했습니다", len(docs))
         return all_ids
 
     def add_document(self, doc: Dict[str, Any]) -> str:
-        """단일 문서 저장"""
+        """단일 질병 문서를 저장합니다."""
         doc_id = uuid.uuid4().hex
         photo_url = doc.pop("photo_url", "")
         self.collection.document(doc_id).set(doc)
@@ -76,9 +75,8 @@ class DiseaseStore:
         logger.info("DiseaseStore: 문서 %s 저장", doc_id)
         return doc_id
 
-    # ---------------------------------------------------------------------
-    # 조회
-    # ---------------------------------------------------------------------
+
+    # -------------------------- 조회 --------------------------
     def get_document(self, doc_id: str) -> Dict[str, Any] | None:
         snap = self.collection.document(doc_id).get()
         if snap.exists:

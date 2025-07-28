@@ -19,7 +19,7 @@ from langchain_google import GoogleGenerativeAIEmbeddings  # type: ignore
 import sys
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from services.firestore_vector import FirestoreVectorStore  # noqa: E402
+from RAG.vector_store import FirestoreVectorStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
