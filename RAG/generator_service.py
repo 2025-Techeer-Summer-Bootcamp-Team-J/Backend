@@ -33,6 +33,8 @@ from PIL import Image
 import io
 import re
 import asyncio
+import json
+
 
 # RAG prompt & schema
 from RAG.prompt import OUTPUT_SCHEMA as _OUTPUT_SCHEMA, PROMPT as _prompt
@@ -152,13 +154,13 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
     context_str = _get_context_from_store(disease_name)
 
     symptoms_text = symptoms if symptoms else "증상 정보 없음"
+
+    # ---- 프롬프트 구성 ----
     prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
-    logger.info("LLM 호출(이미지 + 텍스트) 시작...")
-    # 이미지 리사이즈
+    # 이미지 리사이즈 및 해시 계산
     image = Image.open(io.BytesIO(image_bytes))
     image = _resize_image_to_512(image)
-    # 캐시 키용 해시
     img_bytes_resized = io.BytesIO()
     image.save(img_bytes_resized, format="PNG")
     img_hash_val = _image_hash(img_bytes_resized.getvalue())

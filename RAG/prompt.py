@@ -38,7 +38,7 @@ PROMPT_TEMPLATE: str = (
     "사용자 증상: {symptoms}\n\n"
     "질문: {question}\n\n"
     "다음 JSON 형식으로만 대답해. 다른 설명은 금지.\n"
-    "답변할때 null은 금지\n"
+    "답변할때 null은 금지. image_analysis.skin_score는 1~100 사이 정수, estimated_treatment_period는 'n주' 형태 문자열로 반드시 채워라.\n"
     "{output_schema}에 있는 모든 내용을 답해라"
 )
 
