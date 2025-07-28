@@ -13,6 +13,7 @@ from typing import Any, List, Optional, Tuple
 
 import numpy as np
 from google.cloud import firestore  # type: ignore
+from crud.firestore import get_firestore_client
 from langchain_core.vectorstores import VectorStore
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
@@ -42,7 +43,7 @@ class FirestoreVectorStore(VectorStore):
         collection_vectors: str = "vectors",
     ) -> None:
         self.embedding = embedding
-        self.client = firestore.Client(project=project_id)
+        self.client = get_firestore_client() if project_id is None else firestore.Client(project=project_id)
         self.col_docs = self.client.collection(collection_docs)
         self.col_vectors = self.client.collection(collection_vectors)
 
@@ -69,6 +70,7 @@ class FirestoreVectorStore(VectorStore):
         ids: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[str]:
+        """텍스트와 메타데이터를 Firestore에 저장합니다."""
         metadatas = metadatas or [{} for _ in texts]
         ids = ids or [self._gen_id() for _ in texts]
         if not (len(texts) == len(metadatas) == len(ids)):
@@ -90,27 +92,17 @@ class FirestoreVectorStore(VectorStore):
         k: int = 4,
         **kwargs: Any,
     ) -> List[Document]:
-        logger.info("FirestoreVectorStore: 유사도 검색을 시작합니다 (배치 처리 방식).")
+        """코사인 유사도로 쿼리와 가장 유사한 문서를 반환합니다."""
+        logger.info("FirestoreVectorStore: 유사도 검색 시작")
 
-        # 1. 쿼리 임베딩 (재시도 로직 추가)
-        max_retries = 3
-        query_emb = None
-        for attempt in range(max_retries):
-            try:
-                logger.info(f"  - 1단계: 쿼리 임베딩 시도 ({attempt + 1}/{max_retries})...")
-                query_emb = np.array(self.embedding.embed_query(query))
-                logger.info("  - 1단계: 쿼리 임베딩 성공!")
-                break
-            except Exception as e:
-                logger.warning(f"  - 1단계: 쿼리 임베딩 실패. 오류: {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-                else:
-                    logger.error("  - 1단계: 쿼리 임베딩 최종 실패.")
-                    raise
+        # 1) 쿼리 임베딩
+        try:
+            query_emb = np.array(self.embedding.embed_query(query))
+        except Exception as e:
+            logger.error("쿼리 임베딩 실패: %s", e)
+            raise
 
         # 2. 모든 벡터를 배치로 나누어 로드하고 유사도 계산
-        logger.info("  - 2단계: Firestore 벡터를 배치로 나누어 유사도를 계산합니다...")
         sims: List[Tuple[str, float]] = []
         batch_size = 100
         cursor = None
@@ -135,18 +127,15 @@ class FirestoreVectorStore(VectorStore):
                 score = float(np.dot(query_emb, emb) / (np.linalg.norm(query_emb) * np.linalg.norm(emb) + 1e-10))
                 sims.append((eid, score))
             
-            logger.info(f"    - {total_vectors}개 벡터 처리 완료...")
             cursor = vectors_batch[-1]
 
-        logger.info(f"  - 2단계: 총 {total_vectors}개 벡터에 대한 유사도 계산 완료.")
+        logger.info(f"FirestoreVectorStore: 총 {total_vectors}개 벡터에 대한 유사도 계산 완료.")
 
         # 3. 상위 K개 결과 정렬 및 선택
         sims.sort(key=lambda x: x[1], reverse=True)
         top_ids = [eid for eid, _ in sims[:k]]
-        logger.info(f"  - 3단계: 가장 유사한 문서 ID {len(top_ids)}개를 찾았습니다.")
 
         # 4. 원본 문서 조회
-        logger.info(f"  - 4단계: 원본 문서 {len(top_ids)}개를 조회합니다...")
         docs: List[Document] = []
         for eid in top_ids:
             doc_ref = self.col_docs.document(eid).get()
@@ -161,6 +150,7 @@ class FirestoreVectorStore(VectorStore):
     # ------------------------ Helpers ------------------------
     @staticmethod
     def _gen_id() -> str:
+        """랜덤 HEX 문자열 ID 생성"""
         import uuid
 
         return uuid.uuid4().hex
