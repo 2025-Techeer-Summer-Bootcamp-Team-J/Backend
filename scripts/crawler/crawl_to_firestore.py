@@ -33,9 +33,9 @@ from dotenv import load_dotenv # noqa: E402
 # 내부 서비스 모듈 path 추가
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from services.disease_store import DiseaseStore  # noqa: E402
+from RAG.disease_store import DiseaseStore  # noqa: E402
 from langchain_google_genai import GoogleGenerativeAIEmbeddings  # noqa: E402
-from services.firestore_vector import FirestoreVectorStore  # noqa: E402
+from RAG.vector_store import FirestoreVectorStore  # noqa: E402
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
