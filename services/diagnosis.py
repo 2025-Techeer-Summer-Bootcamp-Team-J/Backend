@@ -208,6 +208,7 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
             ("image_analysis", "image_analysis"),
             ("disease_name", "disease_name"),
             ("ai_opinion", "ai_opinion"),
+
             ("detailed_description", "detailed_description"),
             ("precautions", "precautions"),
             ("management", "management"),

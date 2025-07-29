@@ -14,9 +14,11 @@ OUTPUT_SCHEMA: str = """{
         "estimated_treatment_period": "(예시: 2-4주등 의 기간, skin_score바탕으로 계산)"
     },
     "disease_name": "질병명(한국어)",
+
     "ai_opinion": "답변할 내용의 종합 요약, 정리 (총 2문장)",
     "detailed_description": "정의(1문장)|특징(증상)(2문장)|원인(1문장)을 포함한 설명",
     "precautions": ["주의점1(1문장)", "주의점2(1문장)", "주의점3(1문장)"],
+
     "management": {
         "일상 관리법(가정에서의 피부 관리, 샤워법 등)(1문장)": "",
         "의학적 치료법(1문장)(연고, 경구약, 물리치료 등)": "",
@@ -30,6 +32,7 @@ OUTPUT_SCHEMA: str = """{
 }"""
 
 PROMPT_TEMPLATE: str = (
+
     "너는 피부 질환 이미지를 분석하고, 사용자의 증상을 참고하여 '가장 가능성이 높은' 질병 명을 제안하는 AI 어시스턴트다.\n"
     "제일 먼저 입력된 사진({image})을 면밀히 관찰하여 질병 명을 판단하라 {question} 이거는 참고만 해라 정확도가 높지 않을수 있다.\n"
     "{question}에서 질병명이 없다고 안하면 피부 질환은 무조건 있다.\n"
@@ -47,6 +50,7 @@ PROMPT_TEMPLATE: str = (
     "문맥 (참고 문서):\n{context}\n\n"
     "사용자 증상:\n{symptoms}\n\n"
     "출력 형식:\n{output_schema}"
+
 )
 
 PROMPT = ChatPromptTemplate.from_messages([

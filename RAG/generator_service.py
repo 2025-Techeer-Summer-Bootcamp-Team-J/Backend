@@ -144,6 +144,7 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
     symptoms_text = symptoms if symptoms else "증상 정보 없음"
 
     # ---- 프롬프트 구성 ----
+
     prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA, image="uploaded_image")
 
     # ---- LLM 호출 (이미지 포함) ----
@@ -159,6 +160,8 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
         res = model.generate_content([prompt_str, image_obj])
     else:
         res = model.generate_content(prompt_str)
+
+
 
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
