@@ -31,7 +31,7 @@ from bs4 import BeautifulSoup  # type: ignore
 from dotenv import load_dotenv # noqa: E402
 
 # 내부 서비스 모듈 path 추가
-sys.path.append(str(Path(__file__).resolve().parents[1]))
+sys.path.append(str(Path(__file__).resolve().parents[2]))  # project root
 
 from RAG.disease_store import DiseaseStore  # noqa: E402
 from langchain_google_genai import GoogleGenerativeAIEmbeddings  # noqa: E402
@@ -101,8 +101,11 @@ def crawl_page(url: str) -> Dict[str, str] | None:
 
 
 def process_row(row: Dict[str, str]) -> Dict[str, object] | None:
-    disease_name = row["disease_name"].strip()
-    url = row["url"].strip()
+    disease_name = (row.get("disease_name") or "").strip()
+    url = (row.get("url") or "").strip()
+    if not disease_name or not url:
+        logger.warning("필수 필드(disease_name, url) 누락 → 건너뜀: %s", row)
+        return None
     source_name = row.get("기관명", "") or row.get("source", "")
     logger.info("크롤링: %s (%s)", disease_name, url)
     page = crawl_page(url)
