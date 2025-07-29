@@ -34,8 +34,7 @@ def process_diagnosis_task(user_id: str, image_base64: str):
         result = client.run_workflow(
             workspace_name="skin-classification-tm1gk",
             workflow_id="detect-and-classify",
-            images={"image": tmp_path},
-            use_cache=True
+            images={"image": tmp_path}
         )
 
         # 임시 파일 삭제
