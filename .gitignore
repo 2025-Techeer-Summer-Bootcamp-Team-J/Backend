@@ -143,6 +143,7 @@ uv.lock
 .ropeproject
 
 ngrok.*
+best_disease_classifier.*
 
 # mkdocs documentation
 /site
