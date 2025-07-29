@@ -75,15 +75,19 @@ def run_onnx_inference(image_bytes):
         # The result is a numpy array, convert it to a torch tensor for softmax.
         probabilities = torch.nn.functional.softmax(torch.from_numpy(result[0]), dim=1)[0]
         
-        # Get the top prediction (the one with the highest probability).
-        confidence, pred_idx = torch.max(probabilities, 0)
-        predicted_class = CLASS_NAMES[pred_idx.item()]
-        
-        # Prepare the result in the format expected by the API endpoints.
-        predictions = [{
-            "class": predicted_class,
-            "confidence": confidence.item()
-        }]
+        # Get the top 3 predictions.
+        top_k_confidences, top_k_indices = torch.topk(probabilities, 3)
+
+        # Prepare the list of top 3 predictions.
+        predictions = []
+        for i in range(len(top_k_confidences)):
+            confidence = top_k_confidences[i].item()
+            pred_idx = top_k_indices[i].item()
+            predicted_class = CLASS_NAMES[pred_idx]
+            predictions.append({
+                "class": predicted_class,
+                "confidence": confidence
+            })
 
         return predictions
 
