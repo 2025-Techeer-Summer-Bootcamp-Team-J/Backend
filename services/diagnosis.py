@@ -205,11 +205,13 @@ async def generate_disease_info_stream_service(image_bytes: bytes, disease_name:
 
         # 스트리밍으로 각 섹션 전송 (새 스키마)
         sections = [
+            ("image_analysis", "image_analysis"),
             ("disease_name", "disease_name"),
+            ("ai_opinion", "ai_opinion"),
             ("detailed_description", "detailed_description"),
             ("precautions", "precautions"),
             ("management", "management"),
-            ("출처", "source")
+            ("출처", "출처")
         ]
         
         for section_key, section_type in sections:
