@@ -13,7 +13,7 @@ import os
 import logging
 from pathlib import Path
 
-from langchain_google import GoogleGenerativeAIEmbeddings  # type: ignore
+from langchain_google_genai import GoogleGenerativeAIEmbeddings  # type: ignore
 
 # 내부 서비스 모듈 import 경로 추가
 import sys
@@ -32,7 +32,7 @@ def main() -> None:
     if not gemini_key:
         raise RuntimeError("GEMINI_API_KEY 환경 변수가 설정되어 있지 않습니다.")
 
-    embeddings = GoogleGenerativeAIEmbeddings(api_key=gemini_key)
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=gemini_key)
     store = FirestoreVectorStore(embedding=embeddings)
 
     txt_files = glob.glob(str(SEED_DIR / "*.txt"))
