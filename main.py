@@ -1,10 +1,11 @@
-from fastapi import FastAPI, File, UploadFile, APIRouter, Depends, File, UploadFile, Form
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile, APIRouter, Depends, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from database.database import engine
 from api.router import api_router
 from prometheus_fastapi_instrumentator import Instrumentator
 import os
 import logging
+
 #서버가 실행되는 메인 공간
 
 # YOLOv8 skin disease detection 추가 import
@@ -48,16 +49,39 @@ from database.database import engine, Base
 Base.metadata.create_all(bind=engine)
 
 # 서버 실행
-app = FastAPI()
+app = FastAPI(
+    docs_url=None,      # /docs 제거
+    redoc_url=None,     # /redoc 제거
+    openapi_url=None,   # /openapi.json 제거
+)
 
 # CORS 미들웨어 설정 - 프론트엔드에서 백엔드로 요청 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.ppikkappeonjjeog.life"],
+    allow_origins=["https://www.ppikkappeonjjeog.life", "http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def block_if_no_api_key(request: Request, call_next):
+    excluded_paths = ["/health", "/", "/.well-known/acme-challenge/", "/metrics"]
+    # Preflight 요청은 통과
+    if request.method == "OPTIONS":
+        return await call_next(request)
+    if request.url.path in excluded_paths:
+            return await call_next(request)
+    # x-api-key 헤더가 없거나 틀리면 무조건 차단
+    valid_key  = os.environ.get("API_KEY")
+    received_key = request.headers.get("X-API-KEY")
+    if not received_key:
+        return JSONResponse(status_code=403, content={"detail": "API 키 헤더가 없습니다."})
+
+    if received_key != valid_key:
+        return JSONResponse(status_code=403, content={"detail": "API 키가 유효하지 않습니다."})
+
+    return await call_next(request)
 
 # post/router/post_router.py에서 main으로 라우팅
 # tags를 작성하면 docs에서 tag별로 분류되어 보기 편함
