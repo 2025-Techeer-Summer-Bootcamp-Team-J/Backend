@@ -17,6 +17,7 @@ from services.diagnosis import generate_disease_info_stream_service
 from schema.diagnosis_save import SaveDiagnosisResponse, SavedDiagnosisResponse
 from crud.storage import upload_image
 from services.local_diagnosis import run_onnx_inference
+from schema.ResultResponseModel import ResultResponseModel
 
 router = APIRouter(
     prefix="/diagnoses",
