@@ -35,7 +35,6 @@ celery==5.4.0
 kombu==5.4.2
 inference-sdk==0.15.0
 pytz==2024.1
-Pillow==11.1.0
 google-cloud-storage
 langchain==0.1.20
 langchain-community==0.0.38
@@ -47,3 +46,6 @@ langchain-google-genai
 matplotlib
 numpy==1.26.4
 beautifulsoup4==4.12.3
+onnxruntime
+torch
+torchvision

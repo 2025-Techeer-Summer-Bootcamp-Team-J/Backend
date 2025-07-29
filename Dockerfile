@@ -38,6 +38,9 @@ COPY requirements.txt .
 # Python 패키지 설치
 RUN uv pip install --system -r requirements.txt
 
+# ONNX 모델 파일 복사
+COPY best_disease_classifier.onnx .
+
 # 애플리케이션 코드 복사
 COPY . .
 EXPOSE 8000
