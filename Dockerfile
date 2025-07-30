@@ -16,6 +16,8 @@ RUN sh /uv-installer.sh && rm /uv-installer.sh
 # 설치된 바이너리가 `PATH`에 있는지 확인합니다.
 ENV PATH="/root/.local/bin:$PATH"
 
+RUN rm -rf /root/.cache/*
+
 # 작업 디렉토리 설정
 WORKDIR /app
 
