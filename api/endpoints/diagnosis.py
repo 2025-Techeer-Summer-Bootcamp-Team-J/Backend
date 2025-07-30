@@ -8,7 +8,7 @@ from schema.Task import TaskStartResponse, TaskStatusResponse
 import base64
 from tasks.diagnosis import process_diagnosis_task
 from schema.diagnosis import DiagnosisResponse, box_to_schema, SimplifiedDiagnosisResponse, aggregate_and_normalize_diagnoses, UserDiagnosisResponse, diagnosis_to_simple_schema, UserDiagnosisBasicResponse, diagnosis_to_basic_schema, AdditionalInfoRequest, AdditionalInfoResponse, AdditionalInfoSuccessResponse
-from inference_sdk import InferenceHTTPClient
+from services.local_diagnosis import run_onnx_inference
 import tempfile
 import os
 from services.diagnosis import delete_diagnosis, save_diagnosis_data, save_additional_info, get_additional_info
@@ -16,6 +16,7 @@ from fastapi.responses import StreamingResponse
 from services.diagnosis import generate_disease_info_stream_service
 from schema.diagnosis_save import SaveDiagnosisResponse, SavedDiagnosisResponse
 from crud.storage import upload_image
+from services.local_diagnosis import run_onnx_inference
 from schema.ResultResponseModel import ResultResponseModel
 
 router = APIRouter(
@@ -57,7 +58,7 @@ async def get_diagnosis_image(
 @router.post("",
              response_model=TaskStartResponse,
              summary="비동기 진단 요청",
-             description="이미지를 업로드하여 비동기 진단을 요청합니다")
+             description="이미지를 업로드하여 비동기 진단을 요청합니다.")
 async def create_diagnosis_async(
     user_id: str = Form(...),
     file: UploadFile = File(...),
@@ -231,35 +232,27 @@ async def create_diagnosis_sync(
         contents = await file.read()
         image_base64 = base64.b64encode(contents).decode('utf-8')
 
-        # Base64를 이미지 파일로 변환하여 임시 파일로 저장
-        image_data = base64.b64decode(image_base64)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-            tmp.write(image_data)
-            tmp_path = tmp.name
-
-        # Roboflow inference API 호출
-        client = InferenceHTTPClient(
-            api_url="https://serverless.roboflow.com",
-            api_key=os.environ.get("ROBOFLOW_API_KEY")
-        )
-        result = client.run_workflow(
-            workspace_name="skin-classification-tm1gk",
-            workflow_id="detect-and-classify",
-            images={"image": tmp_path},
-            use_cache=True
-        )
-
-        # 임시 파일 삭제
-        os.remove(tmp_path)
-
-        # Roboflow 결과 파싱
+        # ONNX 모델로 추론 실행
+        result = run_onnx_inference(contents)
+        
+        # 결과 파싱 및 처리 (모델 출력에 따라 수정 필요)
+        # 예시: result가 클래스별 확률을 담고 있다고 가정
+        # 이 부분은 실제 모델의 출력 형식에 맞춰야 합니다.
         predictions = []
-        if isinstance(result, list) and len(result) > 0:
-            result = result[0]
-        if isinstance(result, dict):
-            output = result.get('output', {})
-            predictions_dict = output.get('predictions', {})
-            predictions = predictions_dict.get('predictions', [])
+        if result and len(result) > 0:
+            # 예시: result[0]가 (1, num_classes, H, W) 형태의 배열이라고 가정
+            # 실제 모델의 출력에 따라 인덱싱 및 처리가 달라질 수 있습니다.
+            # 여기서는 간단히 첫 번째 결과를 사용합니다.
+            class_probabilities = result[0][0] 
+            
+            # 클래스 이름 리스트 (모델에 따라 정의 필요)
+            class_names = ["class1", "class2", "class3"] # 예시
+            
+            for i, prob in enumerate(class_probabilities):
+                predictions.append({
+                    "class": class_names[i],
+                    "confidence": float(prob)
+                })
 
         # 간소화된 응답 생성
         simplified_data = aggregate_and_normalize_diagnoses(predictions, image_base64)
@@ -282,7 +275,7 @@ async def create_diagnosis_sync(
 def read_user_diagnoses(user_id: str, db: Session = Depends(get_db)):
     try:
         # user_id 유효성 검사 - 0보다 큰 양수여야 함
-        if user_id <= 0:
+        if not user_id.isdigit() or int(user_id) <= 0:
             raise HTTPException(status_code=400, detail={"code": 400, "message": "유효하지 않은 사용자 ID입니다"})
 
         # 삭제되지 않은 진단 데이터만 조회 (diseases 관계도 함께 로드)
@@ -314,9 +307,8 @@ def read_user_diagnoses(user_id: str, db: Session = Depends(get_db)):
             data=diagnosis_data
         )
 
-    except HTTPException:
-        # HTTPException은 다시 발생시킴
-        raise
+    except HTTPException as e:
+        raise e
     except Exception as e:
         print(f"사용자 진단 조회 중 예상치 못한 오류 발생: {e}")
         raise HTTPException(

@@ -38,6 +38,7 @@ COPY requirements.txt .
 # Python 패키지 설치
 RUN uv pip install --system -r requirements.txt
 
+
 # 애플리케이션 코드 복사
 COPY . .
 EXPOSE 8000
