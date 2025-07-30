@@ -154,8 +154,11 @@ services:
     build: .
     container_name: celery-beat
     command: celery -A config.celery.app beat --loglevel=info
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/summerbootcamp-d4f6ec4850e7.json
     volumes:
       - .:/app
+      - ./credentials/summerbootcamp-d4f6ec4850e7.json:/app/credentials/summerbootcamp-d4f6ec4850e7.json
     networks:
       - backend-network
     depends_on:

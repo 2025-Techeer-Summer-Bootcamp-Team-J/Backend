@@ -52,14 +52,6 @@ def _clean_context(context: str, max_chars: int = 4000) -> str:
     return cleaned[:max_chars]
 
 
-def _resize_image_to_512(image: Image.Image) -> Image.Image:
-    """가장 긴 변을 512px로 리사이즈 (PIL 이미지 반환)"""
-    w, h = image.size
-    if max(w, h) <= 512:
-        return image
-    ratio = 512 / max(w, h)
-    new_size = (int(w * ratio), int(h * ratio))
-    return image.resize(new_size, Image.LANCZOS)
 
 # ---- Retriever & LLM Lazy 생성 ----
 @lru_cache(maxsize=1)
@@ -105,7 +97,7 @@ def _image_hash(image_bytes: bytes) -> str:
     return hashlib.sha1(image_bytes).hexdigest()
 
 @lru_cache(maxsize=64)
-def _cached_llm_response(img_hash: str, disease_name: str, symptoms_text: str) -> Dict[str, Any]:
+def _cached_llm_response(disease_name: str, symptoms_text: str) -> Dict[str, Any]:
     """LLM 응답 캐싱: key = (img_hash, disease_name, symptoms_text)"""
     # 이 함수는 generate_disease_info 내부에서 처음 호출될 때만 실행되며,
     # 실제 LLM 호출 로직은 여기서 수행된다.
@@ -117,17 +109,13 @@ def _cached_llm_response(img_hash: str, disease_name: str, symptoms_text: str) -
         symptoms=symptoms_text,
         question=disease_name,
         output_schema=_OUTPUT_SCHEMA,
+        image="uploaded_image"
     )
 
     if symptoms_text.strip() == "증상 정보 없음":
         res = model.generate_content(prompt_str)
     else:
-        # img_hash 는 generate_disease_info 에서 리사이즈된 이미지 바이트로 계산됨
-        from PIL import Image
-        import io, base64
-        img_bytes = base64.b16decode(img_hash.encode())  # dummy to satisfy type; actual bytes 전달은 외부
-        image = Image.open(io.BytesIO(img_bytes))
-        res = model.generate_content([prompt_str, image])
+        res = model.generate_content(prompt_str)
 
     # 응답 파싱 (텍스트 → JSON)
     if hasattr(res, "text") and res.text:
@@ -156,25 +144,25 @@ def generate_disease_info(image_bytes: bytes, disease_name: str, symptoms: str |
     symptoms_text = symptoms if symptoms else "증상 정보 없음"
 
     # ---- 프롬프트 구성 ----
-    prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA)
 
-    # 이미지 리사이즈 및 해시 계산
-    image = Image.open(io.BytesIO(image_bytes))
-    image = _resize_image_to_512(image)
-    img_bytes_resized = io.BytesIO()
-    image.save(img_bytes_resized, format="PNG")
-    img_hash_val = _image_hash(img_bytes_resized.getvalue())
+    prompt_str = _prompt.format(context=context_str, symptoms=symptoms_text, question=disease_name, output_schema=_OUTPUT_SCHEMA, image="uploaded_image")
 
-    # ---- LLM 응답 캐싱 ----
-    cached = _cached_llm_response(img_hash_val, disease_name, symptoms_text)
-    if cached:
-        return cached
+    # ---- LLM 호출 (이미지 포함) ----
+    from PIL import Image  # 로컬 import: pillow가 이미 requirements에 포함됨
+    import io
+    try:
+        image_obj = Image.open(io.BytesIO(image_bytes))
+    except Exception:
+        logger.warning("이미지 디코딩 실패, 이미지 없이 요청 수행")
+        image_obj = None
 
-    # 캐시 미스 시 실제 호출 (텍스트-only 분기 포함)
-    if symptoms_text.strip() == "증상 정보 없음":
-        res = model.generate_content(prompt_str)
+    if image_obj is not None:
+        res = model.generate_content([prompt_str, image_obj])
     else:
-        res = model.generate_content([prompt_str, image])
+        res = model.generate_content(prompt_str)
+
+
+
     logger.info("LLM 응답 수신. JSON 파싱 시도...")
 
     import json, re

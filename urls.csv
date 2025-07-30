@@ -1,106 +1,116 @@
 disease_name,url,기관명
-Eczema,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31626,서울아산병원
-Eczema,https://my.clevelandclinic.org/health/diseases/9998-eczema,Cleveland Clinic
-Eczema,https://www.medicalnewstoday.com/articles/14417,Medical News Today
-"Warts, Molluscum and other Viral Infections",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32115,서울아산병원
-"Warts, Molluscum and other Viral Infections",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32204,서울아산병원
-Melanoma,https://www.cancer.go.kr/lay1/program/S1T211C223/cancer/view.do?cancer_seq=5237,국가암정보센터
-Melanoma,http://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000033,서울대학교병원
-"Atopic Dermatitis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=30645,서울아산병원
-"Atopic Dermatitis",https://www.health.kr/researchInfo/info_view.asp?idx=3280,약학정보원
-"Atopic Dermatitis",https://ko.wikipedia.org/wiki/아토피_피부염,위키백과
-"Basal Cell Carcinoma",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31899,서울아산병원
-"Basal Cell Carcinoma",https://www.cancer.go.kr/lay1/program/S1T211C223/cancer/view.do?cancer_seq=5229,국가암정보센터
-"Basal Cell Carcinoma",https://ko.wikipedia.org/wiki/기저세포암,위키백과
-"Melanocytic Nevi",https://www.amc.seoul.kr/asan/healthinfo/mediscreen/mediscreenDetail.do?mediscreenId=4427,서울아산병원
-"Melanocytic Nevi",https://www.ncbi.nlm.nih.gov/books/NBK470451/,NCBI
-"Benign Keratosis-like Lesions",https://www.oracleclinic.com/new/pds/sub03.php?item=seborrheic_keratosis,오라클피부과
-"Benign Keratosis-like Lesions",https://www.amc.seoul.kr/asan/healthinfo/mediscreen/mediscreenDetail.do?mediscreenId=3741,서울아산병원
-"Psoriasis, Lichen Planus",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=30514,서울아산병원
-"Psoriasis, Lichen Planus",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32273,서울아산병원
-"Seborrheic Keratoses",https://synapse.koreamed.org/articles/1169727,대한피부과학회저널
-"Seborrheic Keratoses",https://www.oracleclinic.com/new/pds/sub03.php?item=seborrheic_keratosis,오라클피부과
-"Tinea/Ringworm/Candidiasis",http://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000735,서울대학교병원
-"Tinea/Ringworm/Candidiasis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32289,서울아산병원
-Dermatofibroma,http://www.openwiki.kr/med/index.php/피부섬유종(dermatofibroma_),오픈위키
-Dermatofibroma,https://www.ncbi.nlm.nih.gov/books/NBK535392/,NCBI
-Dermatofibroma,https://kiss.kstudy.com/Detail/Ar?key=3874312,대한피부과학회지
-"Actinic Keratosis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31897,서울아산병원
-"Actinic Keratosis",https://sev.severance.healthcare/health/encyclopedia/disease.do?mode=view&articleNo=76214,세브란스병원
-"Actinic Keratosis",http://www.doctorsnews.co.kr/news/articleView.html?idxno=94520,의협신문
-"Vascular Malformations",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32420,서울아산병원
-Acne,http://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000018,서울대학교병원
-Acne,https://my.clevelandclinic.org/health/diseases/12233-acne,Cleveland Clinic
-Acne,https://www.youtube.com/watch?v=yYJ4-s8zXqA,피부텐텐
-Vitiligo,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=30491,서울아산병원
-Vitiligo,https://sev.severance.healthcare/health/encyclopedia/disease.do?mode=view&articleNo=75043,세브란스병원
-Vitiligo,https://www.medicalnewstoday.com/articles/245081,Medical News Today
-Hyperpigmentation,https://www.msdmanuals.com/ko/홈/피부-질환/색소-장애/과다색소침착,MSD 매뉴얼
-Hyperpigmentation,https://www.amc.seoul.kr/asan/healthinfo/mediscreen/mediscreenDetail.do?mediscreenId=1710,서울아산병원
-Hyperpigmentation,https://www.medicalnewstoday.com/articles/323808,Medical News Today
-"Nail Psoriasis",http://ksp.or.kr/general/sub02_2.html,대한건선학회
-"Nail Psoriasis",https://www.healthline.com/health/nail-psoriasis,Healthline
-"Atopic Dermatitis",https://www.aad.org/public/diseases/eczema/types/atopic-dermatitis/treatment,American Academy of Dermatology
-"Atopic Dermatitis",https://www.mayoclinic.org/diseases-conditions/atopic-dermatitis-eczema/diagnosis-treatment/drc-20353279,Mayo Clinic
-"Warts, Molluscum and other Viral Infections",https://www.cdc.gov/molluscum-contagiosum/about/index.html,CDC
-Melanoma,https://www.aad.org/public/diseases/skin-cancer/melanoma,American Academy of Dermatology
-"Basal Cell Carcinoma",https://www.skincancer.org/ko/skin-cancer-information/basal-cell-carcinoma/,Skin Cancer Foundation
-"Melanocytic Nevi",https://www.mayoclinic.org/diseases-conditions/moles/symptoms-causes/syc-20375213,Mayo Clinic
-"Psoriasis, Lichen Planus",https://www.mayoclinic.org/diseases-conditions/psoriasis/symptoms-causes/syc-20355840,Mayo Clinic
-"Seborrheic Keratoses",https://www.ncbi.nlm.nih.gov/books/NBK545285/,NCBI
-"Tinea/Ringworm/Candidiasis",https://www.who.int/news-room/fact-sheets/detail/ringworm-(tinea),World Health Organization
-Dermatofibroma,https://www.msdmanuals.com/ko/home/피부-질환/비암성-피부-성장/피부섬유종,MSD 매뉴얼
-"Actinic Keratosis",https://www.aad.org/member/clinical-quality/guidelines/actinic-keratosis,American Academy of Dermatology
-"Vascular Malformations",https://pmc.ncbi.nlm.nih.gov/articles/PMC4078214/,PMC
-Acne,https://www.aad.org/member/clinical-quality/guidelines/acne,American Academy of Dermatology
-Vitiligo,https://www.mayoclinic.org/diseases-conditions/vitiligo/symptoms-causes/syc-20355912,Mayo Clinic
-Hyperpigmentation,https://iris.who.int/bitstream/handle/10665/44514/WHO_TRS_959_kor_eng.pdf,World Health Organization
-"Nail Psoriasis",https://www.apollohospitals.com/ko/diseases-and-conditions/nail-psoriasis,Apollo Hospitals
-"Atopic Dermatitis",https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5694,질병관리청
-"Atopic Dermatitis",https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=6582,질병관리청
-"Atopic Dermatitis",https://www.derma.or.kr,대한피부과학회
-"Atopic Dermatitis",https://atopy.re.kr,대한아토피피부염학회
-"Atopic Dermatitis",https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000394,서울대학교병원
-"Atopic Dermatitis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32481,서울아산병원
-"Warts, Molluscum and other Viral Infections",https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5689,질병관리청
-"Warts, Molluscum and other Viral Infections",https://www.derma.or.kr/new/general/disease.php?uid=3390&mod=document,대한피부과학회
-"Warts, Molluscum and other Viral Infections",https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000219,서울대학교병원
-"Warts, Molluscum and other Viral Infections",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31547,서울아산병원
-"Warts, Molluscum and other Viral Infections",https://www.msdmanuals.com/ko/home/%ED%94%BC%EB%B6%80-%EC%A7%88%ED%99%98/%EB%B0%94%EC%9D%B4%EB%9F%AC%EC%8A%A4%EC%84%B1-%ED%94%BC%EB%B6%80-%EA%B0%90%EC%97%BC/%EC%82%AC%EB%A7%88%EA%B7%80,MSD 매뉴얼
-Melanoma,https://www.cancer.go.kr/lay1/program/S1T211C223/cancer/view.do?cancer_seq=4517,국가암정보센터
-Melanoma,https://www.derma.or.kr,대한피부과학회
-Melanoma,https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000220,서울대학교병원
-Melanoma,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32475,서울아산병원
-Melanoma,https://www.skincancer.org/ko/skin-cancer-information/melanoma/melanoma-treatments/,Skin Cancer Foundation
-"Benign Keratosis-like Lesions",https://www.cancer.go.kr/lay1/S1T273C275/contents.do,국가건강정보포털
-"Benign Keratosis-like Lesions",https://www.amc.seoul.kr/asan/healthinfo/easymediterm/easyMediTermDetail.do?dictId=3802,서울아산병원
-"Benign Keratosis-like Lesions",https://www.schmc.ac.kr/bucheon/selectBbsNttView.do?key=1006&bbsNo=203&nttNo=144480,순천향대학교부천병원
-"Psoriasis, Lichen Planus",https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=1344,질병관리청
-"Psoriasis, Lichen Planus",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31548,서울아산병원
-"Psoriasis, Lichen Planus",https://jejunuh.co.kr/dept/dm/disease/_/listRelDss.do,제주대학교병원
-"Seborrheic Keratoses",https://www.amc.seoul.kr/asan/healthinfo/easymediterm/easyMediTermDetail.do?dictId=3802,서울아산병원
-"Seborrheic Keratoses",https://www.schmc.ac.kr/bucheon/selectBbsNttView.do?key=1006&bbsNo=203&nttNo=144480,순천향대학교부천병원
-"Seborrheic Keratoses",https://www.derma.or.kr,대한피부과학회
-"Tinea/Ringworm/Candidiasis",https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=3749,질병관리청
-"Tinea/Ringworm/Candidiasis",https://www.mohw.go.kr/board.es?mid=a10503010100&bid=0027&act=view&list_no=318873,보건복지부
-"Tinea/Ringworm/Candidiasis",https://www.kimsonline.co.kr/ResCenter/diseasefocus/view/814,킴스온라인
-Dermatofibroma,https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000521,서울대학교병원
-Dermatofibroma,https://health.severance.healthcare/health/media/card.do?mode=view&articleNo=67788,세브란스병원
-Dermatofibroma,https://integ.khnmc.or.kr/kr/treatment/doctor/4345/profile.do,대한피부과학회
-"Actinic Keratosis",https://sev.severance.healthcare/health/encyclopedia/disease/body_board.do?mode=view&articleNo=66952,세브란스병원
-"Actinic Keratosis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32478,서울아산병원
-"Actinic Keratosis",https://medicine.yonsei.ac.kr/health/encyclopedia/disease/body_board.do?mode=view&articleNo=66952,연세대학교 의과대학
-"Vascular Malformations",https://www.amc.seoul.kr,서울아산병원
-"Vascular Malformations",https://www.mayoclinic.org,Mayo Clinic
-"Vascular Malformations",https://dermnetnz.org/topics/vascular-malformations,DermNet NZ
-Acne,https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=3947,질병관리청
-Acne,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32480,서울아산병원
-Acne,https://www.msdmanuals.com/ko/home/%ED%94%BC%EB%B6%80-%EC%A7%88%ED%99%98/%EB%B0%94%EC%9D%B4%EC%8D%AC%EC%8A%A4%EC%84%B1-%ED%94%BC%EB%B6%80-%EA%B0%90%EC%97%BC/%EC%97%AC%EB%93%9C%EB%A6%BC,MSD 매뉴얼
-Vitiligo,https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5336,질병관리청
-Vitiligo,https://www.mohw.go.kr/board.es?mid=a10503000000&bid=0027&act=view&list_no=301560,보건복지부
-Vitiligo,https://www.cnuh.com/health/disease.cs?act=view&infoId=109,전남대학교병원
-Hyperpigmentation,https://www.korea.kr/news/policyNewsView.do?newsId=148691629,정책브리핑
-Hyperpigmentation,https://www.health.harvard.edu,Harvard Medical School
-"Nail Psoriasis",https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32477,서울아산병원
-"Nail Psoriasis",https://www.msdmanuals.com,MSD 매뉴얼
-"Nail Psoriasis",https://www.aad.org,American Academy of Dermatology
+습진
+Eczema,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32481,서울아산병원
+Eczema,https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5694,국가건강정보포털
+Eczema,http://child.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000227,서울대학교어린이병원
+Eczema,https://common.health.kr/shared/healthkr/pharmreview/%EC%8A%B5%EC%A7%84(Eczema)%EC%9D%98%20%EB%AA%A8%EB%93%A0%20%EA%B2%83.pdf,한국의약협회
+
+Warts, Molluscum and other Viral Infections (사마귀, 전염성 연속종 등 바이러스 감염)
+Warts,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31547, 서울아산병원
+Warts,https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000219, 서울대학교병원
+Warts,http://child.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000219, 서울대학교어린이병원
+Warts,https://en.wikipedia.org/wiki/Wart, 위키백과
+
+Molluscum and other Viral Infections (사마귀, 전염성 연속종 등 바이러스 감염)
+Warts, Molluscum and other Viral Infections,https://en.wikipedia.org/wiki/Molluscum_contagiosum, 위키백과
+Warts, Molluscum and other Viral Infections,https://openwiki.kr/med/molluscum_contagiosum, 오픈위키
+
+
+Melanoma (흑색종)
+Melanoma,https://www.msdmanuals.com/ko/home/%ED%94%BC%EB%B6%80-%EC%A7%88%ED%99%98/%ED%94%BC%EB%B6%80%EC%95%94/%ED%9D%91%EC%83%89%EC%A2%85, MSD
+Melanoma,https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32475, 서울아산병원
+Melanoma,https://www.cancer.go.kr/lay1/program/S1T211C223/cancer/view.do?cancer_seq=4517&menu_seq=4521, 국가암정보센터
+Melanoma,http://www.samsunghospital.com/home/healthInfo/content/contenView.do?CONT_SRC_ID=33974&CONT_SRC=HOMEPAGE&CONT_ID=7245&CONT_CLS_CD=001020001009, 삼성서울병원
+
+Atopic Dermatitis (아토피 피부염)
+Atopic Dermatitis, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31519, 서울아산병원
+Atopic Dermatitis, https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000394
+Atopic Dermatitis, https://www.niams.nih.gov/ko/health-topics/atopi-pibuyeomi, 국립 관절염 및 근골격계 및 피부질환 연구소
+Atopic Dermatitis, https://sev.severance.healthcare/health/encyclopedia/disease/disease.do?mode=view&articleNo=60846&title=%EC%95%84%ED%86%A0%ED%94%BC+%ED%94%BC%EB%B6%80%EC%97%BC+%5BAtopic+dermatitis%5D, 세브란스 병원
+Atopic Dermatitis, https://common.health.kr/shared/healthkr/pharmreview/%EC%95%84%ED%86%A0%ED%94%BC%ED%94%BC%EB%B6%80%EC%97%BC(Atopic%20Dermatitis)%20(1)_JS.pdf
+
+Basal Cell Carcinoma (기저세포암)
+Basal Cell Carcinoma, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32466, 서울아산병원
+Basal Cell Carcinoma, https://www.skincancer.org/ko/skin-cancer-information/basal-cell-carcinoma/bcc-causes-and-risk-factors/, 피부암재단
+Basal Cell Carcinoma, https://ko.wikipedia.org/wiki/%EA%B8%B0%EC%A0%80%EC%84%B8%ED%8F%AC%EC%95%94, 위키백과
+Basal Cell Carcinoma, https://www.kimsonline.co.kr/ResCenter/diseasefocus/view/526, 대한민국의약정보센터 KIMS
+
+
+
+
+
+Melanocytic Nevi (멜라닌 세포 모반, 흔히 '점' 또는 '모반')
+Melanocytic Nevi, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32517, 서울아산병원
+Melanocytic Nevi, https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do?cntnts_sn=5692, 질병관리청
+Melanocytic Nevi, https://www.snubh.org/service/info/com/view.do?BNO=316&Board_ID=B004&RNUM=1, 분당서울대학교병원
+Melanocytic Nevi, https://en.wikipedia.org/wiki/Melanocytic_nevus, 위키백과
+
+Benign Keratosis-like Lesions (양성 각화성 병변)
+Benign Keratosis-like Lesions, https://www.derma.or.kr/new/general/disease.php?uid=591&mod=document, 대한피부과학회
+Benign Keratosis-like Lesions, https://en.wikipedia.org/wiki/Seborrheic_keratosis, 위키백과
+Benign Keratosis-like Lesions, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32154, 서울아산병원
+
+
+
+
+Psoriasis, Lichen Planus and related diseases (건선, 편평 태선 등)
+Psoriasis, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31548#:~:text=%EA%B1%B4%EC%84%A0(Psoriasis)%20%7C%20%EC%A7%88%ED%99%98%EB%B0%B1%EA%B3%BC,%EA%B1%B4%EA%B0%95%EC%A0%95%EB%B3%B4%20%7C%20%EC%84%9C%EC%9A%B8%EC%95%84%EC%82%B0%EB%B3%91%EC%9B%90&text=%EA%B1%B4%EC%84%A0%EC%9D%80%20%ED%94%BC%EB%B6%80%EC%97%90%20%EA%B2%BD%EA%B3%84,%EB%A7%8C%EC%84%B1%20%EC%97%BC%EC%A6%9D%EC%84%B1%20%ED%94%BC%EB%B6%80%20%EC%A7%88%ED%99%98%EC%9E%85%EB%8B%88%EB%8B%A4., 서울아산병원
+Psoriasis, https://sev.severance.healthcare/health/encyclopedia/disease/body_board.do?mode=view&articleNo=66951&title=%EA%B1%B4%EC%84%A0+%5BPsoriasis%5D#:~:text=%ED%9D%94%ED%9E%88%20%EA%B1%B4%EC%84%A0%EC%9D%B4%EB%9D%BC%EA%B3%A0%20%EB%B6%80%EB%A5%B4%EB%8A%94%20%EC%A7%88%ED%99%98%EC%9D%80%20%EB%8C%80%EB%B6%80%EB%B6%84%20%EA%B2%BD%EA%B3%84%EA%B0%80%20%EB%9A%9C%EB%A0%B7%ED%95%9C,%ED%8C%94%EA%BF%88%EC%B9%98%EB%82%98%20%EB%AC%B4%EB%A6%8E%2C%20%EC%97%89%EB%8D%A9%EC%9D%B4%20%EB%93%B1%20%EB%AC%BC%EB%A6%AC%EC%A0%81%20%EB%A7%88%EC%B0%B0%EC%9D%B4%20%EC%9E%90%EC%A3%BC, 세브란스병원
+Psoriasis, https://www.derma.or.kr/new/general/disease.php?uid=586&mod=document, 대한피부과학회
+Psoriasis, https://www.whosaeng.com/127464#:~:text=%EA%B0%84%EC%A7%80%EB%9F%AC%EC%9B%8C%EC%84%9C%20%EC%86%90%EC%9C%BC%EB%A1%9C%20%EB%AC%B8%EC%A7%80%EB%A5%B4%EA%B1%B0%EB%82%98%20%EA%B8%81%EC%9C%BC%EB%A9%B4%20%EA%B0%81%EC%A7%88%EC%9D%B4%20%EB%B9%84%EB%93%AC%EC%B2%98%EB%9F%BC%20%ED%9B%84%EB%91%90%EB%91%91,%EB%8B%A4%20%EB%82%98%EC%95%98%EB%8B%A4%EA%B3%A0%20%EC%83%9D%EA%B0%81%ED%95%98%EA%B3%A0%20%EB%B0%A9%EC%B9%98%ED%95%98%EC%97%AC%20%EB%B3%91%EC%9D%84%20%ED%82%A4%EC%9A%B0%EA%B8%B0%20%EC%89%BD%EB%8B%A4., 후생신보
+
+Seborrheic Keratoses (지루각화증)
+Seborrheic Keratoses, https://www.derma.or.kr/new/general/disease.php?uid=591&mod=document, 대한피부과학회
+Seborrheic Keratoses, https://en.wikipedia.org/wiki/Seborrheic_keratosis, 위키백과
+Seborrheic Keratoses, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32154, 서울아산병원
+
+
+Tinea/Ringworm/Candidiasis (무좀/곰팡이 및 칸디다 감염)
+Tinea/Ringworm/Candidiasis, https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000038, 서울대학교병원
+Tinea/Ringworm/Candidiasis, https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000214, 서울대학교병원
+Tinea/Ringworm/Candidiasis, https://en.wikipedia.org/wiki/Athlete%27s_foot, 위키백과
+Tinea/Ringworm/Candidiasis, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31677, 서울아산병원
+
+
+Dermatofibroma (피부섬유종)
+Dermatofibroma, https://en.wikipedia.org/wiki/Dermatofibroma, 위키백과
+Dermatofibroma, https://ozheanps.com/benign-tumor/dermatofibroma.php, 오체안성형외과
+Dermatofibroma, http://www.metrohosp.com/sub05/healthguide_contents.php?idx=12090, 메트로병원
+
+
+Actinic Keratosis (광선각화증)
+Actinic Keratosis, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=32478, 서울아산병원
+Actinic Keratosis, https://sev.severance.healthcare/health/encyclopedia/disease/system.do?mode=view&articleNo=66952&title=%EA%B4%91%EC%84%A0%EA%B0%81%ED%99%94%EC%A6%9D+%5BActinic+keratosis%5D, 세브란스병원
+Actinic Keratosis, https://www.derma.or.kr/new/general/disease.php?uid=3373&mod=document, 대한피부과학회
+Actinic Keratosis, https://en.wikipedia.org/wiki/Actinic_keratosis, 위키백과
+
+Vascular Malformations (혈관기형)
+Vascular Malformations, https://en.wikipedia.org/wiki/Vascular_malformation, 위키백과
+Vascular Malformations, https://child.snuh.org/m/reservation/clinic/KC042/clinicInfo.do, 서울대학교어린이병원
+
+
+Acne (여드름)
+Acne, https://sev.severance.healthcare/health/encyclopedia/disease/disease.do?mode=view&articleNo=66955&title=%EC%97%AC%EB%93%9C%EB%A6%84+%5BAcne%5D, 세브란스병원
+Acne, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31543, 서울아산병원
+Acne, https://gsph.yonsei.ac.kr/health/encyclopedia/disease/body_board.do?mode=view&articleNo=66955&title=%EC%97%AC%EB%93%9C%EB%A6%84+%5BAcne%5D, 세브란스병원
+Acne, http://www.jcmj.co.kr/web/bbs/board.php?bo_table=c03&wr_id=229, 명지대학교병원
+
+
+Vitiligo (백반증)
+Vitiligo, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31542, 서울아산병원
+Vitiligo, https://sev.severance.healthcare/health/encyclopedia/disease/disease.do?mode=view&articleNo=67062&title=%EB%B0%B1%EB%B0%98%EC%A6%9D+%5BVitiligo%5D, 세브란스병원
+Vitiligo, https://gsph.yonsei.ac.kr/health/encyclopedia/disease/body_board.do?mode=view&articleNo=67062&title=%EB%B0%B1%EB%B0%98%EC%A6%9D+%5BVitiligo%5D, 세브란스병원
+Vitiligo, https://en.wikipedia.org/wiki/Vitiligo, 위키백과
+Vitiligo, https://www.vitiligo-korea.org:446/vitiligo02.htm, 대한백반증협회
+
+
+Hyperpigmentation (과다색소침착)
+Hyperpigmentation, https://en.wikipedia.org/wiki/Hyperpigmentation, 위키백과
+Hyperpigmentation, https://www.msdmanuals.com/ko/home/%ED%94%BC%EB%B6%80-%EC%A7%88%ED%99%98/%EC%83%89%EC%86%8C-%EC%9E%A5%EC%95%A0/%EA%B3%BC%EB%8B%A4%EC%83%89%EC%86%8C%EC%B9%A8%EC%B0%A9, MSD
+Hyperpigmentation, https://ovomedispa.com/ko/hyperpigmentation/, 오브메디스파
+
+대상포진
+herpes zoster, https://www.amc.seoul.kr/asan/healthinfo/disease/diseaseDetail.do?contentId=31541, 서울아산병원
+herpes zoster, https://www.snuh.org/health/nMedInfo/nView.do?category=DIS&medid=AA000006, 서울대학교병원
+herpes zoster, https://sev.severance.healthcare/health/encyclopedia/disease/body_board.do?mode=view&articleNo=65687&title=%EB%8C%80%EC%83%81%ED%8F%AC%EC%A7%84+%5B, 세브란스병원
+herpes zoster, https://ko.wikipedia.org/wiki/%EB%8C%80%EC%83%81%ED%8F%AC%EC%A7%84, 위키백과

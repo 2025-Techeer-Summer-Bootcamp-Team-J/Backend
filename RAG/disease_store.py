@@ -4,7 +4,6 @@
 컬렉션 구조는 다음과 같다.
     diseases/{doc_id} : {
         "disease_name": str,
-        "photo_url": str,
         "detailed_description": str,
         "precautions": list[str],
         "management": dict,
