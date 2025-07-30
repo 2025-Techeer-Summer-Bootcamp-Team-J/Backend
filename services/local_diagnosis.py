@@ -1,9 +1,16 @@
+from crud.storage import download_model_from_gcs
 import onnxruntime
 import numpy as np
 from PIL import Image
 import io
 from torchvision import transforms
 import torch
+
+download_model_from_gcs(
+    "ppikkappeonjjeog-classifier-bucket",           # 버킷 이름
+    "best_disease_classifier.onnx",          # GCS 내 파일 경로
+    "best_disease_classifier.onnx"                  # 로컬에 저장할 파일명
+)
 
 # --- Configuration ---
 ONNX_MODEL_PATH = 'best_disease_classifier.onnx'
