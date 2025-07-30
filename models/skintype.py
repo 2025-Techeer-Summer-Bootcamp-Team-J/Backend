@@ -18,5 +18,5 @@ class SkinType(Base):
     diseases = relationship("Disease", secondary="SKINTYPE_DISEASE", back_populates="skintypes")
     users = relationship(
         "UserSkinType",
-        back_populates="skintype"
+        back_populates="skintypes"
     )
