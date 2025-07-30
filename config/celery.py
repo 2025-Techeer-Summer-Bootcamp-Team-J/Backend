@@ -4,6 +4,7 @@ from celery import Celery
 from celery.schedules import crontab
 from kombu import Exchange, Queue  # kombu에서 Queue와 Exchange 임포트
 import logging 
+from models import *
 
 # 환경변수를 통한 동적 설정 (Docker 환경과 로컬 환경 모두 지원)
 # Docker 환경에서는 서비스 이름 'redis'를 사용, 로컬 환경에서는 localhost 사용
@@ -33,7 +34,7 @@ app.conf.update(
     beat_schedule={
         'update-uv-index-every-hour': {
             'task': 'tasks.uv_index.update_uv_index_task',
-            'schedule': crontab(minute='*/5'), # 1분마다 실행
+            'schedule': crontab(minute='*/1'), # 1분마다 실행
             'args': (),
             'kwargs': {},
             'options': {'queue': 'default'}
