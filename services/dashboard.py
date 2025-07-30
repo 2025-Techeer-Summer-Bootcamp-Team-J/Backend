@@ -17,7 +17,7 @@ def get_dashboard(db: Session, user_id: str) -> Dashboard:
             Diagnosis.skinType_score != None,
             Diagnosis.created_at >= thirty_days_ago,
             Diagnosis.is_deleted == False
-        ).order_by(Diagnosis.created_at.desc()).all()
+        ).order_by(Diagnosis.created_at.asc()).all()
         # int 또는 float 타입만 리스트에 포함
         recent_skinType_scores = [int(d.skinType_score) for d in recent_diagnoses if isinstance(d.skinType_score, (int, float))]
 
