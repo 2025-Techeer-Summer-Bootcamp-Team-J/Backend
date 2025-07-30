@@ -66,7 +66,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def block_if_no_api_key(request: Request, call_next):
-    excluded_paths = ["/health", "/", "/.well-known/acme-challenge/", "/metrics"]
+    excluded_paths = ["/health", "/", "/.well-known/acme-challenge/", "/metrics", "/api/users/clerk-webhook"]
     # Preflight 요청은 통과
     if request.method == "OPTIONS":
         return await call_next(request)
