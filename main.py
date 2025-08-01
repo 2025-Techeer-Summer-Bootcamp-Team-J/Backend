@@ -58,7 +58,7 @@ app = FastAPI(
 # CORS 미들웨어 설정 - 프론트엔드에서 백엔드로 요청 허용
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://www.ppikkappeonjjeog.life", "http://localhost:5173"],
+    allow_origins=["https://www.ppikkappeonjjeog.life"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -66,7 +66,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def block_if_no_api_key(request: Request, call_next):
-    excluded_paths = ["/health", "/", "/.well-known/acme-challenge/", "/metrics", "/api/users/clerk-webhook"]
+    excluded_paths = ["/health", "/", "/.well-known/acme-challenge/", "/metrics", "/docs"]
     # Preflight 요청은 통과
     if request.method == "OPTIONS":
         return await call_next(request)

@@ -13,8 +13,11 @@ router = APIRouter(prefix="/users", tags=["user"])
 
 @router.get("", summary="user 테이블 조회", description="user 테이블 정보를 조회합니다")
 def get_user(db: Session = Depends(get_db)):
-    response_data = get_user_table(db)
-    return ResultResponseModel(status_code=200, message="success", data=response_data)
+    try:
+        response_data = get_user_table(db)
+        return ResultResponseModel(status_code=200, message="success", data=response_data)
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"서버 에러: {str(e)}")
 
 @router.post("/signup", summary="회원 가입", description="새로운 유저의 회원가입")
 def signup(req: UserCreate, db: Session = Depends(get_db)):

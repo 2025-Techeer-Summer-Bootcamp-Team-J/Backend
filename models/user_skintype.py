@@ -11,4 +11,4 @@ class UserSkinType(Base):
     is_deleted = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="skintypes")
-    skintype = relationship("SkinType", back_populates="users")
+    skintypes = relationship("SkinType", back_populates="users")
