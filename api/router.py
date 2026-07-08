@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from api.endpoints import skintype, diseases, diagnosis, admin
+from api.endpoints import skintype, diseases, diagnosis, admin, user
 
 
 api_router = APIRouter(
@@ -9,4 +9,5 @@ api_router.include_router(skintype.router)
 api_router.include_router(diseases.router)
 api_router.include_router(diagnosis.router)
 api_router.include_router(admin.router)
+api_router.include_router(user.router)
 

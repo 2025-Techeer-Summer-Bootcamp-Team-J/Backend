@@ -11,4 +11,4 @@ class Symptom(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     is_deleted = Column(Boolean, default=False) 
 
-    diagnoses = relationship("Diagnosis", secondary="DIAGNOSIS_SYMPTOM", back_populates="symptoms") 
+    diagnoses = relationship("Diagnosis", secondary="DIAGNOSIS_SYMPTOM", back_populates="symptoms")
